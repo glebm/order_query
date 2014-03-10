@@ -14,3 +14,9 @@ end
 platform :jruby do
   gem 'activerecord-jdbcsqlite3-adapter'
 end
+
+platform :rbx do
+  gem 'rubysl-singleton', '~> 2.0'
+  gem 'rubysl-optparse', '~> 2.0'
+  gem 'rubysl-ostruct', '~> 2.0'
+end
