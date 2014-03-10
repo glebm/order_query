@@ -31,8 +31,10 @@ describe 'SearchInOrder.search_in_order' do
     expect(Issue.display_order.scope.to_a).to eq(issues)
     issues.each_slice(2) do |prev, cur|
       cur ||= issues.first
-      #  STDERR.puts prev.display_order.items_after.to_sql + "\n\n"
       expect(prev.display_order.next_item).to eq(cur)
+      expect(cur.display_order.prev_item).to eq(prev)
+      expect(cur.display_order.scope.count).to eq(Issue.count)
+      expect(cur.display_order.items_before.count + 1 + cur.display_order.items_after.count).to eq(cur.display_order.scope.count)
     end
   end
 

@@ -6,7 +6,7 @@ module SearchInOrder
       line         = line.dup
       @options     = line.extract_options!
       @name        = line[0]
-      @order       = line[1]
+      @order       = line[1] || :asc
       @order_order = line[2] || :desc
       @scope       = scope
     end

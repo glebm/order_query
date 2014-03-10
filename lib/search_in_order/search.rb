@@ -16,6 +16,10 @@ module SearchInOrder
       order.scope
     end
 
+    def reverse_ordered_scope
+      order.reverse_scope
+    end
+
     def first_item
       ordered_scope.first
     end
@@ -49,8 +53,9 @@ module SearchInOrder
     end
 
     def items(mode)
+      scope = (mode == :after ? ordered_scope : reverse_ordered_scope)
       query, query_args = build_query(mode)
-      ordered_scope.where(query, *query_args.reduce(:+))
+      scope.where(query, *query_args.reduce(:+))
     end
 
     protected
@@ -77,9 +82,9 @@ module SearchInOrder
         if eq
           [attr_eq, value]
         else
-          attr_ord = attr_ord.reverse if mode == :after
           # all up to current
-          values   = attr_ord.first(attr_ord.index(value))
+          pos    = attr_ord.index(value)
+          values = mode == :after ? attr_ord.from(pos + 1) : attr_ord.first(pos)
           if values.length > 1 && attr_ord.length - 1 == values.length
             ["#{spec.col_name_sql} <> ?", value]
           else
