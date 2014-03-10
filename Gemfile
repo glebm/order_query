@@ -15,5 +15,4 @@ gemspec
 
 group :test, :development do
   gem 'coveralls', require: false
-  gem 'byebug'
 end
