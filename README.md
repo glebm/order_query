@@ -1,8 +1,8 @@
 search_in_order [![Build Status](https://travis-ci.org/glebm/search_in_order.png)](https://travis-ci.org/glebm/search_in_order) [![Code Climate](https://codeclimate.com/github/glebm/search_in_order.png)](https://codeclimate.com/github/glebm/search_in_order)
 ================================
 
-ActiveRecord plugin that can find next / previous item(s) in 1 query.
-This gem is super-alpha, and the queries it generates are not yet fully optimized yet.
+ActiveRecord extension that can find next / previous item(s) in 1 query.
+This gem is super-alpha, and the queries it generates do not have common conditions factorized yet.
 
 No gem has been released yet, but you can install it from the repository:
 

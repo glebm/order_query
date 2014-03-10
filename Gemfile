@@ -1,18 +1,16 @@
 source 'https://rubygems.org'
 
-# Declare your gem's dependencies in search_in_order.gemspec.
-# Bundler will treat runtime dependencies like base dependencies, and
-# development dependencies will be added by default to the :development group.
 gemspec
-
-# Declare any dependencies that are still in development here instead of in
-# your gemspec. These might include edge Rails or gems from your path or
-# Git. Remember to move these dependencies to your gemspec before releasing
-# your gem to rubygems.org.
-
-# To use debugger
-# gem 'debugger'
 
 group :test, :development do
   gem 'coveralls', require: false
+end
+
+platform :mri, :rbx do
+  # version locked because of rbx issue, see https://github.com/travis-ci/travis-ci/issues/2006#issuecomment-36275141
+  gem 'sqlite3', '=1.3.8'
+end
+
+platform :jruby do
+  gem 'activerecord-jdbcsqlite3-adapter'
 end
