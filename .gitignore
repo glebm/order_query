@@ -1,4 +1,5 @@
 Gemfile.lock
+coverage/
 .ruby-version
 .ruby-gemset
 .bundle/

@@ -1,4 +1,4 @@
-source "https://rubygems.org"
+source 'https://rubygems.org'
 
 # Declare your gem's dependencies in search_in_order.gemspec.
 # Bundler will treat runtime dependencies like base dependencies, and
@@ -12,3 +12,8 @@ gemspec
 
 # To use debugger
 # gem 'debugger'
+
+group :test, :development do
+  gem 'coveralls', require: false
+  gem 'byebug'
+end
