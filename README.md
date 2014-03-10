@@ -2,9 +2,9 @@ search_in_order [![Build Status](https://travis-ci.org/glebm/search_in_order.png
 ================================
 
 ActiveRecord plugin that can find next / previous item(s) in 1 query.
-Super-alpha, and the query is not yet fully optimized.
+This gem is super-alpha, and the queries it generates are not yet fully optimized yet.
 
-No gem released yet, but you can install from the repository:
+No gem has been released yet, but you can install it from the repository:
 
 ```ruby
 gem 'search_in_order', git: 'https://github.com/glebm/search_in_order'
