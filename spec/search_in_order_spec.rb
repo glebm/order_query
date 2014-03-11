@@ -26,8 +26,9 @@ describe 'SearchInOrder.search_in_order' do
         ['medium', 10, 5, t],
         ['low', 30, 0, t + 1.day]
     ].map do |attr|
-      Issue.new(priority: attr[0], votes: attr[1], suspicious_votes: attr[2], updated_at: attr[3]).tap(&:save!)
+      Issue.new(priority: attr[0], votes: attr[1], suspicious_votes: attr[2], updated_at: attr[3])
     end
+    issues.reverse_each(&:save!)
     expect(Issue.display_order.scope.to_a).to eq(issues)
     issues.each_slice(2) do |prev, cur|
       cur ||= issues.first
