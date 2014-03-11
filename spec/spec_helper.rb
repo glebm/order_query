@@ -4,7 +4,7 @@ ENV['RAILS_ENV'] = ENV['RACK_ENV'] = 'test'
 unless defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
   begin
     require 'coveralls'
-    Coveralls.wear! 'rails'
+    Coveralls.wear!
   rescue LoadError
     false
   end
