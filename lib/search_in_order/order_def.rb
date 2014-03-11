@@ -8,7 +8,7 @@ module SearchInOrder
       @scope = scope
       @order = order.map { |line| OrderDefItem.new(scope, line) }
     end
-
+    
     def scope
       @scope.order(order_by_sql)
     end
