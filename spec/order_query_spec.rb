@@ -16,8 +16,8 @@ class Issue < ActiveRecord::Base
   order_query :display_order, DISPLAY_ORDER
 end
 
-def create_issue(priority: 'high', votes: 3, suspicious_votes: 0, updated_at: Time.now, **args)
-  Issue.create!({priority: priority, suspicious_votes: suspicious_votes, updated_at: updated_at}.merge(args))
+def create_issue(options = {})
+  Issue.create!({priority: 'high', votes: 3, suspicious_votes: 0, updated_at: Time.now}.merge(options))
 end
 
 describe 'OrderQuery.order_query' do
