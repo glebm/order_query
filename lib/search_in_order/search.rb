@@ -2,7 +2,7 @@ require 'search_in_order/order_def'
 module SearchInOrder
 
   class Search
-    attr_reader :scope, :order, :values
+    attr_reader :scope, :order, :values, :options
 
     def initialize(record, scope, order)
       @scope  = scope
@@ -12,20 +12,12 @@ module SearchInOrder
       }
     end
 
-    def ordered_scope
-      order.scope
-    end
-
-    def reverse_ordered_scope
-      order.reverse_scope
-    end
-
     def first_item
-      ordered_scope.first
+      order.scope.first
     end
 
     def last_item
-      ordered_scope.last
+      order.scope.last
     end
 
     def count
@@ -53,7 +45,7 @@ module SearchInOrder
     end
 
     def items(mode)
-      scope = (mode == :after ? ordered_scope : reverse_ordered_scope)
+      scope = (mode == :after ? order.scope : order.reverse_scope)
       query, query_args = build_query(mode)
       scope.where(query, *query_args.reduce(:+))
     end

@@ -19,10 +19,11 @@ module SearchInOrder
 
     def order_by_sql_conds
       @order.map { |spec|
-        if spec.order == :asc || spec.order == :desc
-          "#{spec.col_name_sql} #{spec.order.to_s.upcase}"
-        elsif spec.order.is_a?(Array)
-          spec.order.map { |v| "#{spec.col_name_sql}=#{@scope.connection.quote v} #{spec.order_order.to_s.upcase}" } * ', '
+        ord = spec.order
+        if ord == :asc || ord == :desc
+          "#{spec.col_name_sql} #{ord.to_s.upcase}"
+        elsif ord.respond_to?(:map)
+          ord.map { |v| "#{spec.col_name_sql}=#{@scope.connection.quote v} #{spec.order_order.to_s.upcase}" } * ', '
         else
           raise "Unknown order #{spec.order.inspect} (#{spec.inspect})"
         end
