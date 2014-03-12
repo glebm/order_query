@@ -16,6 +16,10 @@ class Issue < ActiveRecord::Base
   search_in_order :display_order, DISPLAY_ORDER
 end
 
+def create_issue(priority: 'high', votes: 3, suspicious_votes: 0, updated_at: Time.now, **args)
+  Issue.create!({priority: priority, suspicious_votes: suspicious_votes, updated_at: updated_at}.merge(args))
+end
+
 describe 'SearchInOrder.search_in_order' do
 
   t        = Time.now
@@ -62,8 +66,14 @@ describe 'SearchInOrder.search_in_order' do
   end
 
   it '.in_order works on a list of ids' do
-    ids = (1..3).map { Issue.create(priority: 'high', votes: 3, suspicious_votes: 0, updated_at: Time.now).id }
+    ids = (1..3).map { create_issue.id }
     expect(Issue.in_order([[:id, ids]]).scope).to have(ids.length).issues
+  end
+
+  it '.in_order preserves previous scope' do
+    create_issue(active: true)
+    expect(Issue.where(active: false).in_order([[:id, :desc]]).scope).to have(0).records
+    expect(Issue.where(active: true).in_order([[:id, :desc]]).scope).to have(1).record
   end
 
   before do
@@ -80,6 +90,7 @@ describe 'SearchInOrder.search_in_order' do
         t.column :suspicious_votes, :integer
         t.column :announced_at, :datetime
         t.column :updated_at, :datetime
+        t.column :active, :boolen, null: false, default: true
       end
     end
 
