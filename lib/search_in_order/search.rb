@@ -77,11 +77,7 @@ module SearchInOrder
           # all up to current
           pos    = attr_ord.index(value)
           values = mode == :after ? attr_ord.from(pos + 1) : attr_ord.first(pos)
-          if values.length > 1 && attr_ord.length - 1 == values.length
-            ["#{spec.col_name_sql} <> ?", value]
-          else
-            ["#{spec.col_name_sql} IN (?)", values]
-          end
+          ["#{spec.col_name_sql} IN (?)", values]
         end
       else
         if eq
