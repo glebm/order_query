@@ -1,8 +1,11 @@
 order_query [![Build Status](https://travis-ci.org/glebm/order_query.png)](https://travis-ci.org/glebm/order_query) [![Code Climate](https://codeclimate.com/github/glebm/order_query.png)](https://codeclimate.com/github/glebm/order_query)
 ================================
 
-ActiveRecord extension that can find next / previous item(s) in 1 query.
-This gem is super-alpha, and the queries it generates do not have common conditions factorized yet.
+order_query provides ActiveRecord methods to find items relative to the position of a given one for a particular ordering. These methods are useful for many navigation scenarios, e.g. links to the next / previous search result from the show page in a typical index/search -> show scenario.
+
+order_query generates queries that only use `WHERE`, `ORDER BY`, and `LIMIT`, and *not* `OFFSET`. It only takes 1 query (returning 1 row) to get the record before or after the given one.
+
+This gem is super-alpha, and the queries it generates are not fully optimized. 
 
 No gem has been released, to install from git:
 
@@ -35,8 +38,6 @@ p.prev_item     #=> Issue<...>
 p.position      #=> 5
 p.next_item     #=> Issue<...>
 p.items_after   #=> ActiveRecord::Relation<...>
-
-
 ```
 
 This project uses MIT-LICENSE.
