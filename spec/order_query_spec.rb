@@ -12,15 +12,15 @@ class Issue < ActiveRecord::Base
     votes - suspicious_votes
   end
 
-  include SearchInOrder
-  search_in_order :display_order, DISPLAY_ORDER
+  include OrderQuery
+  order_query :display_order, DISPLAY_ORDER
 end
 
 def create_issue(priority: 'high', votes: 3, suspicious_votes: 0, updated_at: Time.now, **args)
   Issue.create!({priority: priority, suspicious_votes: suspicious_votes, updated_at: updated_at}.merge(args))
 end
 
-describe 'SearchInOrder.search_in_order' do
+describe 'OrderQuery.order_query' do
 
   t        = Time.now
   datasets = [
@@ -54,7 +54,7 @@ describe 'SearchInOrder.search_in_order' do
         Issue.new(priority: attr[0], votes: attr[1], suspicious_votes: attr[2], updated_at: attr[3])
       end
       issues.reverse_each(&:save!)
-      expect(Issue.display_order.scope.to_a).to eq(issues)
+      expect(Issue.display_order.to_a).to eq(issues)
       issues.each_slice(2) do |prev, cur|
         cur ||= issues.first
         expect(prev.display_order.next_item).to eq(cur)
@@ -65,15 +65,15 @@ describe 'SearchInOrder.search_in_order' do
     end
   end
 
-  it '.in_order works on a list of ids' do
+  it '.order_by_query works on a list of ids' do
     ids = (1..3).map { create_issue.id }
-    expect(Issue.in_order([[:id, ids]]).scope).to have(ids.length).issues
+    expect(Issue.order_by_query([[:id, ids]])).to have(ids.length).issues
   end
 
-  it '.in_order preserves previous scope' do
+  it '.order_by_query preserves previous' do
     create_issue(active: true)
-    expect(Issue.where(active: false).in_order([[:id, :desc]]).scope).to have(0).records
-    expect(Issue.where(active: true).in_order([[:id, :desc]]).scope).to have(1).record
+    expect(Issue.where(active: false).order_by_query([[:id, :desc]])).to have(0).records
+    expect(Issue.where(active: true).order_by_query([[:id, :desc]])).to have(1).record
   end
 
   before do

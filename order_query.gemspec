@@ -1,13 +1,13 @@
 $:.push File.expand_path('../lib', __FILE__)
-require 'search_in_order/version'
+require 'order_query/version'
 
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
-  s.name     = 'search_in_order'
-  s.version  = SearchInOrder::VERSION
+  s.name     = 'order_query'
+  s.version  = OrderQuery::VERSION
   s.author   = 'Gleb Mazovetskiy'
   s.email    = 'glex.spb@gmail.com'
-  s.homepage = 'https://github.com/glebm/search_in_order'
+  s.homepage = 'https://github.com/glebm/order_query'
   s.license  = 'MIT'
   s.summary  = 'ActiveRecord plugin that can find next / previous item(s) in 1 query.'
 

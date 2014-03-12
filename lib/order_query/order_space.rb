@@ -1,12 +1,12 @@
-require 'search_in_order/order_def_item'
-module SearchInOrder
-  class OrderDef
+require 'order_query/order_condition'
+module OrderQuery
+  class OrderSpace
     include Enumerable
     delegate :each, :length, :size, to: :@order
 
     def initialize(scope, order)
       @scope = scope
-      @order = order.map { |line| OrderDefItem.new(scope, line) }
+      @order = order.map { |line| OrderCondition.new(scope, line) }
     end
 
     def scope

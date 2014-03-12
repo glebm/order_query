@@ -9,7 +9,7 @@ unless defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
     false
   end
 end
-require 'search_in_order'
+require 'order_query'
 
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }
 

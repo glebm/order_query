@@ -1,5 +1,5 @@
-module SearchInOrder
-  class OrderDefItem
+module OrderQuery
+  class OrderCondition
     attr_reader :name, :order, :order_order, :options, :scope
 
     def initialize(scope, line)

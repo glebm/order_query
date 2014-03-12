@@ -1,12 +1,12 @@
-require 'search_in_order/order_def'
-module SearchInOrder
+require 'order_query/order_space'
+module OrderQuery
 
-  class Search
+  class RelativeOrder
     attr_reader :scope, :order, :values, :options
 
     def initialize(record, scope, order)
       @scope  = scope
-      @order  = order.is_a?(OrderDef) ? order : OrderDef.new(scope, order)
+      @order  = order.is_a?(OrderSpace) ? order : OrderSpace.new(scope, order)
       @values = Hash.new { |h, key|
         h[key] = record.send(key)
       }
