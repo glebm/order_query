@@ -61,6 +61,11 @@ describe 'SearchInOrder.search_in_order' do
     end
   end
 
+  it '.in_order works on a list of ids' do
+    ids = (1..3).map { Issue.create(priority: 'high', votes: 3, suspicious_votes: 0, updated_at: Time.now).id }
+    expect(Issue.in_order([[:id, ids]]).scope).to have(ids.length).issues
+  end
+
   before do
     Issue.delete_all
   end

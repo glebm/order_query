@@ -80,7 +80,7 @@ module SearchInOrder
           if values.length > 1 && attr_ord.length - 1 == values.length
             ["#{spec.col_name_sql} <> ?", value]
           else
-            join_cond('OR', values.map { |value| [attr_eq, value] })
+            ["#{spec.col_name_sql} IN (?)", values]
           end
         end
       else
