@@ -15,7 +15,6 @@ gem 'order_query', git: 'https://github.com/glebm/order_query'
 ```ruby
 class Issue < ActiveRecord::Base
   include OrderQuery
-  positioned
   order_query :order_display, [
     [:priority, %w(high medium low)],
     [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
