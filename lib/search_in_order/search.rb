@@ -6,7 +6,7 @@ module SearchInOrder
 
     def initialize(record, scope, order)
       @scope  = scope
-      @order  = OrderDef.new scope, order
+      @order  = order.is_a?(OrderDef) ? order : OrderDef.new(scope, order)
       @values = Hash.new { |h, key|
         h[key] = record.send(key)
       }
