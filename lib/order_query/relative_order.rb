@@ -76,6 +76,8 @@ module OrderQuery
         else
           # all up to current
           pos    = attr_ord.index(value)
+          # if current not in result set, do not apply filter
+          return [] unless pos
           values = mode == :after ? attr_ord.from(pos + 1) : attr_ord.first(pos)
           ["#{spec.col_name_sql} IN (?)", values]
         end
