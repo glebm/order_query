@@ -47,7 +47,11 @@ module OrderQuery
     def items(mode)
       scope = (mode == :after ? order.scope : order.reverse_scope)
       query, query_args = build_query(mode)
-      scope.where(query, *query_args.reduce(:+))
+      if query
+        scope.where(query, *query_args.reduce(:+))
+      else
+        scope
+      end
     end
 
     protected
