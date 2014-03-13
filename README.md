@@ -28,10 +28,18 @@ class Issue < ActiveRecord::Base
     votes - suspicious_votes
   end
 end
+```
 
+Order scopes:
+
+```ruby
 Issue.order_display         #=> ActiveRecord::Relation<...>
 Issue.reverse_order_display #=> ActiveRecord::Relation<...>
+```
 
+Relative order:
+
+```ruby
 p = Issue.find(31).order_display(scope) # scope default: Issue.all
 p.items_before  #=> ActiveRecord::Relation<...>
 p.prev_item     #=> Issue<...>
@@ -40,7 +48,7 @@ p.next_item     #=> Issue<...>
 p.items_after   #=> ActiveRecord::Relation<...>
 ```
 
-`order_query` helper just wraps `order_by_query` and `relative_order_by_query`, you can also use them directly:
+`order_query` defines methods that call `.order_by_query` and `#relative_order_by_query`, also public:
 
 ```ruby
 Issue.order_by_query([[:id, :desc]])         #=> ActiveRecord::Relation<...>
@@ -48,4 +56,4 @@ Issue.reverse_order_by_query([[:id, :desc]]) #=> ActiveRecord::Relation<...>
 Issue.find(31).relative_order_by_query([[:id, :desc]]).next_item #=> Issue<...>
 ```
 
-This project uses MIT-LICENSE.
+This project uses MIT license.
