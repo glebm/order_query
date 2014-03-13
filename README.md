@@ -40,4 +40,12 @@ p.next_item     #=> Issue<...>
 p.items_after   #=> ActiveRecord::Relation<...>
 ```
 
+`order_query` helper just wraps `order_by_query` and `relative_order_by_query`, you can also use them directly:
+
+```ruby
+Issue.order_by_query([[:id, :desc]])         #=> ActiveRecord::Relation<...>
+Issue.reverse_order_by_query([[:id, :desc]]) #=> ActiveRecord::Relation<...>
+Issue.find(31).relative_order_by_query([[:id, :desc]]).next_item #=> Issue<...>
+```
+
 This project uses MIT-LICENSE.
