@@ -45,10 +45,11 @@ module OrderQuery
     end
 
     def items(mode)
-      scope = (mode == :after ? order.scope : order.reverse_scope)
+      scope             = (mode == :after ? order.scope : order.reverse_scope)
       query, query_args = build_query(mode)
+
       if query
-        scope.where(query, *query_args.reduce(:+))
+        scope.where(query, *query_args)
       else
         scope
       end
@@ -58,32 +59,56 @@ module OrderQuery
 
     # @param [:before or :after] mode
     def build_query(mode)
-      # The next element will be in one of the "groups" of the same values
-      join_cond 'OR', order.each_with_index.map { |spec, order_i|
-        join_cond 'AND', [
-            filter_attr(spec, mode, false),
-            * order.first(order_i).reverse.map { |other_spec|
-              # unless filter includes everything
-              filter_attr(other_spec, mode, true)
-            }
-        ]
-      }
+      # The next element will be the first one among elements with lesser order
+      build_query_factor(
+          order.map { |o| filter_attr(o, mode, false) },
+          order.map { |o| filter_attr(o, mode, true) }
+      )
     end
 
+    # x0 | x1 & y0 | x2 & y0 &y1 | x3 & y0 & y1 & y2 ... =
+    # x0 | y0 &
+    #    (x1 | y1 &
+    #      (x2 | y2 &
+    #        (x3 | y3 & ... )))
+    def build_query_factor(x, y, i = 0, n = x.length)
+      query = ''
+      query_args = []
+
+      if i < n - 1
+        nested_q, nested_args = build_query_factor(x, y, i + 1)
+        query += '(' + nested_q + ') '
+        query_args << nested_args
+        query += 'OR ' if x[i][0].present?
+      end
+
+      if x[i][0].present?
+        query += x[i][0]
+        query_args << x[i][1]
+      end
+      if i > 0
+        query += ' AND ' + y[i - 1][0]
+        query_args << y[i - 1][1]
+      end
+      [query, query_args.reduce(:+) || []]
+    end
+
+    EMPTY_FILTER = ['', []]
     def filter_attr(spec, mode, eq = false)
       attr, attr_ord = spec.name, spec.order
       value          = values[attr]
       if attr_ord.is_a?(Array)
         attr_eq = "#{spec.col_name_sql} = ?"
         if eq
-          [attr_eq, value]
+          [attr_eq, [value]]
         else
           # all up to current
-          pos    = attr_ord.index(value)
+          pos = attr_ord.index(value)
           # if current not in result set, do not apply filter
-          return [] unless pos
+          return EMPTY_FILTER unless pos
           values = mode == :after ? attr_ord.from(pos + 1) : attr_ord.first(pos)
-          ["#{spec.col_name_sql} IN (?)", values]
+          return EMPTY_FILTER unless values.present?
+          ["#{spec.col_name_sql} IN (?)", [values]]
         end
       else
         if eq
@@ -92,23 +117,8 @@ module OrderQuery
           op = attr_ord == :asc ? '>' : '<' if mode == :after
           op = attr_ord == :asc ? '<' : '>' if mode == :before
         end
-        ["#{spec.col_name_sql} #{op} ?", value]
+        ["#{spec.col_name_sql} #{op} ?", [value]]
       end
-    end
-
-    def join_cond(op, pairs)
-      query = []
-      args  = []
-      pairs.each { |p|
-        if p[0].present?
-          query << p[0]
-          args << p[1]
-        end
-      }
-      return [] unless query.present?
-      query = query * " #{op} "
-      query = "(#{query})" if op == 'OR'
-      [query, args]
     end
   end
 end

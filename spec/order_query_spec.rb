@@ -61,6 +61,8 @@ describe 'OrderQuery.order_query' do
         expect(cur.display_order.prev_item).to eq(prev)
         expect(cur.display_order.scope.count).to eq(Issue.count)
         expect(cur.display_order.items_before.count + 1 + cur.display_order.items_after.count).to eq(cur.display_order.count)
+
+        expect(cur.display_order.items_before.to_a.reverse + [cur] + cur.display_order.items_after.to_a).to eq(Issue.display_order.to_a)
       end
     end
   end

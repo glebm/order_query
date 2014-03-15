@@ -3,12 +3,17 @@ module OrderQuery
     attr_reader :name, :order, :order_order, :options, :scope
 
     def initialize(scope, line)
-      line         = line.dup
-      @options     = line.extract_options!
-      @name        = line[0]
-      @order       = line[1] || :asc
-      @order_order = line[2] || :desc
-      @scope       = scope
+      line              = line.dup
+      @options          = line.extract_options!
+      @name             = line[0]
+      @order            = line[1] || :asc
+      @order_order      = line[2] || :desc
+      @scope            = scope
+      @options[:unique] = true if name.to_s == 'id' && !@options.key?(:unique)
+    end
+
+    def unique?
+      !!options[:unique]
     end
 
     def col_name_sql

@@ -5,7 +5,7 @@ order_query provides ActiveRecord methods to find items relative to the position
 
 order_query generates queries that only use `WHERE`, `ORDER BY`, and `LIMIT`, and *not* `OFFSET`. It only takes 1 query (returning 1 row) to get the record before or after the given one.
 
-This gem is super-alpha, and the queries it generates are not fully optimized. 
+This gem is alpha, and the queries it generates are not fully optimized yet.
 
 No gem has been released, to install from git:
 
