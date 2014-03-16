@@ -122,9 +122,7 @@ module OrderQuery
         ["#{spec.col_name_sql} IN (?)", [values]]
       else
         # ord is :asc or :desc
-        op = {before: {asc: '<', desc: '>'}, after: {asc: '>', desc: '>'}}[mode][ord || asc]
-        op = ord == :asc ? '>' : '<' if mode == :after
-        op = ord == :asc ? '<' : '>' if mode == :before
+        op = {before: {asc: '<', desc: '>'}, after: {asc: '>', desc: '<'}}[mode][ord || :asc]
         ["#{spec.col_name_sql} #{op} ?", [value]]
       end
     end
