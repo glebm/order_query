@@ -17,7 +17,7 @@ module OrderQuery
       @scope.order(order_by_reverse_sql)
     end
 
-    def order_by_sql_conds
+    def to_order_by_sql
       @order.map { |spec|
         ord = spec.order
         if ord == :asc || ord == :desc
@@ -32,11 +32,11 @@ module OrderQuery
 
     def order_by_reverse_sql
       swap = {'DESC' => 'ASC', 'ASC' => 'DESC'}
-      order_by_sql_conds.map { |s| s.gsub(/DESC|ASC/) { |m| swap[m] }  } * ', '
+      to_order_by_sql.map { |s| s.gsub(/DESC|ASC/) { |m| swap[m] }  } * ', '
     end
 
     def order_by_sql
-       order_by_sql_conds * ', '
+       to_order_by_sql * ', '
     end
   end
 end

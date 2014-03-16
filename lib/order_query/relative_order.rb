@@ -61,8 +61,8 @@ module OrderQuery
     def build_query(mode)
       # The next element will be the first one among elements with lesser order
       build_query_factor(
-          order.map { |o| filter_attr(o, mode, false) },
-          order.map { |o| filter_attr(o, mode, true) }
+          order.map { |o| where_relative(o, mode) },
+          order.map { |o| where_eq(o) }
       )
     end
 
@@ -104,29 +104,27 @@ module OrderQuery
 
     EMPTY_FILTER = ['', []]
 
-    def filter_attr(spec, mode, eq = false)
-      attr, attr_ord = spec.name, spec.order
-      value          = values[attr]
-      if attr_ord.is_a?(Array)
-        attr_eq = "#{spec.col_name_sql} = ?"
-        if eq
-          [attr_eq, [value]]
-        else
-          # all up to current
-          pos = attr_ord.index(value)
-          # if current not in result set, do not apply filter
-          return EMPTY_FILTER unless pos
-          values = mode == :after ? attr_ord.from(pos + 1) : attr_ord.first(pos)
-          return EMPTY_FILTER unless values.present?
-          ["#{spec.col_name_sql} IN (?)", [values]]
-        end
+    def where_eq(spec)
+      ["#{spec.col_name_sql} = ?", [values[spec.name]]]
+    end
+
+    # @param [:before or :after] mode
+    def where_relative(spec, mode)
+      ord   = spec.order
+      value = values[spec.name]
+      if ord.is_a?(Array)
+        # ord is an array of values, ordered first to last, e.g.
+        # all up to current
+        pos    = ord.index(value)
+        values = mode == :after ? ord.from(pos + 1) : ord.first(pos) if pos
+        # if current not in result set, do not apply filter
+        return EMPTY_FILTER unless values.present?
+        ["#{spec.col_name_sql} IN (?)", [values]]
       else
-        if eq
-          op = '='
-        else
-          op = attr_ord == :asc ? '>' : '<' if mode == :after
-          op = attr_ord == :asc ? '<' : '>' if mode == :before
-        end
+        # ord is :asc or :desc
+        op = {before: {asc: '<', desc: '>'}, after: {asc: '>', desc: '>'}}[mode][ord || asc]
+        op = ord == :asc ? '>' : '<' if mode == :after
+        op = ord == :asc ? '<' : '>' if mode == :before
         ["#{spec.col_name_sql} #{op} ?", [value]]
       end
     end
