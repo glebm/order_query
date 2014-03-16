@@ -66,34 +66,44 @@ module OrderQuery
       )
     end
 
-    # x0 | x1 & y0 | x2 & y0 &y1 | x3 & y0 & y1 & y2 ... =
-    # x0 | y0 &
-    #    (x1 | y1 &
-    #      (x2 | y2 &
-    #        (x3 | y3 & ... )))
+    # @param [Array] x query conditions
+    # @param [Array] y query conditions
+    # @return [query, query_args] The resulting query is as follows:
+    #   x0 | y0 &
+    #      (x1 | y1 &
+    #        (x2 | y2 &
+    #          (x3 | y3 & ... )))
+    #
+    # Explanation:
+    #
+    #   To narrow the result to only the records that come before / after the current one, build_query passes
+    #   the values of x and y so that:
+    #
+    #   x matches order criteria with values that come after the current record.
+    #   y matches order criteria with values equal to the current record's value, for resolving ties.
+    #
     def build_query_factor(x, y, i = 0, n = x.length)
-      query = ''
-      query_args = []
+      q = []
+
+      x_cond = [x[i][0].presence, x[i][1]]
+      q << x_cond if x_cond[0]
+
+      if i >= 1
+        q << ['AND'] << y[i - 1]
+      end
 
       if i < n - 1
-        nested_q, nested_args = build_query_factor(x, y, i + 1)
-        query += '(' + nested_q + ') '
-        query_args << nested_args
-        query += 'OR ' if x[i][0].present?
+        q << ['OR'] if x_cond[0]
+        nested = build_query_factor(x, y, i + 1)
+        q << ["(#{nested[0]})", nested[1]]
       end
 
-      if x[i][0].present?
-        query += x[i][0]
-        query_args << x[i][1]
-      end
-      if i > 0
-        query += ' AND ' + y[i - 1][0]
-        query_args << y[i - 1][1]
-      end
-      [query, query_args.reduce(:+) || []]
+      [q.map { |e| e[0] }.join(' '),
+       q.map { |e| e[1] }.compact.reduce(:+) || []]
     end
 
     EMPTY_FILTER = ['', []]
+
     def filter_attr(spec, mode, eq = false)
       attr, attr_ord = spec.name, spec.order
       value          = values[attr]

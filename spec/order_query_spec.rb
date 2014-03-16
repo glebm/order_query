@@ -29,7 +29,7 @@ describe 'OrderQuery.order_query' do
           ['high', 5, 1, t],
           ['high', 5, 1, t - 1.day],
           ['medium', 10, 0, t],
-          ['medium', 10, 5, t],
+          ['medium', 10, 5, t - 12.hours],
           ['low', 30, 0, t + 1.day]
       ],
       [
