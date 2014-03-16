@@ -14,6 +14,7 @@ class Issue < ActiveRecord::Base
 
   include OrderQuery
   order_query :display_order, DISPLAY_ORDER
+  order_query :id_order_asc, [[:id, :asc]]
 end
 
 def create_issue(options = {})
@@ -65,6 +66,16 @@ describe 'OrderQuery.order_query' do
         expect(cur.display_order.items_before.to_a.reverse + [cur] + cur.display_order.items_after.to_a).to eq(Issue.display_order.to_a)
       end
     end
+  end
+
+  it 'is ordered correctly for order query [[:id, :asc]]' do
+    a = create_issue
+    b = create_issue
+    expect(a.id_order_asc.next_item).to eq b
+    expect(b.id_order_asc.prev_item).to eq a
+    expect([a] + a.id_order_asc.items_after.to_a).to eq(Issue.id_order_asc.to_a)
+    expect(b.id_order_asc.items_before.reverse.to_a + [b]).to eq(Issue.id_order_asc.to_a)
+    expect(Issue.id_order_asc.count).to eq(2)
   end
 
   it '.order_by_query works on a list of ids' do
