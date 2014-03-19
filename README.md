@@ -1,13 +1,4 @@
-# order_query
-
-[![Build Status](http://img.shields.io/travis/glebm/order_query.svg)][travis]
-[![Code Climate](http://img.shields.io/codeclimate/github/glebm/order_query.svg)][codeclimate]
-[![Coverage Status](http://img.shields.io/coveralls/glebm/order_query.svg)][coveralls]
-
-[travis]: http://travis-ci.org/glebm/order_query
-[gemnasium]: https://gemnasium.com/glebm/order_query
-[codeclimate]: https://codeclimate.com/github/glebm/order_query
-[coveralls]: https://coveralls.io/r/glebm/order_query
+# order_query [![Build Status][travis-badge]][travis] [![Code Climate][codeclimate-badge]][codeclimate] [![Coverage Status][coveralls-badge]][coveralls]
 
 order_query provides ActiveRecord methods to find items relative to the position of a given one for a particular ordering. These methods are useful for many navigation scenarios, e.g. links to the next / previous search result from the show page in a typical index/search -> show scenario.
 order_query generates queries that only use `WHERE`, `ORDER BY`, and `LIMIT`, and *not* `OFFSET`. It only takes 1 query (returning 1 row) to get the record before or after the given one.
@@ -63,3 +54,12 @@ Issue.find(31).relative_order_by_query(Issue.visible, [[:id, :desc]]).next_item 
 ```
 
 This project uses MIT license.
+
+
+[travis]: http://travis-ci.org/glebm/order_query
+[travis-badge]: http://img.shields.io/travis/glebm/order_query.svg
+[gemnasium]: https://gemnasium.com/glebm/order_query
+[codeclimate]: https://codeclimate.com/github/glebm/order_query
+[codeclimate-badge]: http://img.shields.io/codeclimate/github/glebm/order_query.svg
+[coveralls]: https://coveralls.io/r/glebm/order_query
+[coveralls-badge]: http://img.shields.io/coveralls/glebm/order_query.svg
