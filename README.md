@@ -36,14 +36,15 @@ Issue.reverse_order_display #=> ActiveRecord::Relation<...>
 Relative order:
 
 ```ruby
-p = Issue.find(31).order_display(scope) # scope default: Issue.all
-p.before     #=> ActiveRecord::Relation<...>
-p.previous   #=> Issue<...>
+# get the order object, scope default: Issue.all
+p = Issue.find(31).order_display(scope)
+p.before         #=> ActiveRecord::Relation<...>
+p.previous       #=> Issue<...>
+# pass true to #next and #previous in order to loop onto the the first / last record
+# will not loop onto itself
+p.previous(true) #=> Issue<...>
 p.position   #=> 5
 p.next       #=> Issue<...>
-# pass true to #next and #previous in order to loop onto the the first / last record if there are no records after / before this one.
-# will not loop onto itself
-p.next(true)
 p.after      #=> ActiveRecord::Relation<...>
 ```
 
