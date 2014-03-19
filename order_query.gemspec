@@ -9,10 +9,10 @@ Gem::Specification.new do |s|
   s.email    = 'glex.spb@gmail.com'
   s.homepage = 'https://github.com/glebm/order_query'
   s.license  = 'MIT'
-  s.summary  = 'ActiveRecord plugin that can find next / previous item(s) in 1 query.'
+  s.summary  = 'Find next / previous record(s) in one query, for ActiveRecord'
 
   s.files      = Dir['{app,lib,config}/**/*', 'MIT-LICENSE', 'Rakefile', 'Gemfile', 'README.md']
-  s.test_files = Dir['test/**/*']
+  s.test_files = Dir['spec/**/*']
 
   s.add_dependency 'activerecord', '~> 4.0'
   s.add_dependency 'activesupport', '~> 4.0'
