@@ -9,7 +9,7 @@ module OrderQuery
       @order            = line[1] || :asc
       @order_order      = line[2] || :desc
       @scope            = scope
-      @unique           = @options.key?(:unique) ? !!@options[:unique] : name.to_s == 'id'
+      @unique           = @options.key?(:unique) ? !!@options[:unique] : (name.to_s == scope.primary_key)
     end
 
     def unique?
