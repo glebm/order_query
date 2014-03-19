@@ -2,21 +2,19 @@ require 'order_query/order_space'
 module OrderQuery
 
   class RelativeOrder
-    attr_reader :scope, :order, :values, :options
+    attr_reader :record, :scope, :order, :values, :options
 
     def initialize(record, scope, order)
+      @record = record
       @scope  = scope
       @order  = order.is_a?(OrderSpace) ? order : OrderSpace.new(scope, order)
-      @values = Hash.new { |h, key|
-        h[key] = record.send(key)
-      }
     end
 
-    def first_item
+    def first
       order.scope.first
     end
 
-    def last_item
+    def last
       order.scope.last
     end
 
@@ -25,26 +23,26 @@ module OrderQuery
     end
 
     def position
-      count - items_after.count
+      count - after.count
     end
 
-    def next_item(loop = true)
-      items_after.first || (first_item if loop)
+    def next(loop = true)
+      record_unless_current after.first || (first if loop)
     end
 
-    def prev_item(loop = true)
-      items_before.first || (last_item if loop)
+    def previous(loop = true)
+      record_unless_current before.first || (last if loop)
     end
 
-    def items_after
-      items :after
+    def after
+      records :after
     end
 
-    def items_before
-      items :before
+    def before
+      records :before
     end
 
-    def items(mode)
+    def records(mode)
       scope             = (mode == :after ? order.scope : order.reverse_scope)
       query, query_args = build_query(mode)
       if query
@@ -55,6 +53,10 @@ module OrderQuery
     end
 
     protected
+
+    def record_unless_current(record)
+      record unless record == @record
+    end
 
     # @param [:before or :after] mode
     # @return [query, parameters] conditions that exclude all elements not before / after the current one
@@ -136,7 +138,7 @@ module OrderQuery
     end
 
     def attr_value(attr)
-      values[attr.name]
+      record.send attr.name
     end
   end
 end

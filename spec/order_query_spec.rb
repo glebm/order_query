@@ -43,10 +43,6 @@ describe 'OrderQuery.order_query' do
           ['high', 5, 1, t - 1.day],
           ['low', 30, 0, t + 1.day]
       ],
-      [
-          ['medium', 5, 1, t - 1.day]
-      ],
-
   ]
 
   datasets.each_with_index do |ds, i|
@@ -58,23 +54,29 @@ describe 'OrderQuery.order_query' do
       expect(Issue.display_order.to_a).to eq(issues)
       issues.each_slice(2) do |prev, cur|
         cur ||= issues.first
-        expect(prev.display_order.next_item).to eq(cur)
-        expect(cur.display_order.prev_item).to eq(prev)
+        expect(prev.display_order.next).to eq(cur)
+        expect(cur.display_order.previous).to eq(prev)
         expect(cur.display_order.scope.count).to eq(Issue.count)
-        expect(cur.display_order.items_before.count + 1 + cur.display_order.items_after.count).to eq(cur.display_order.count)
+        expect(cur.display_order.before.count + 1 + cur.display_order.after.count).to eq(cur.display_order.count)
 
-        expect(cur.display_order.items_before.to_a.reverse + [cur] + cur.display_order.items_after.to_a).to eq(Issue.display_order.to_a)
+        expect(cur.display_order.before.to_a.reverse + [cur] + cur.display_order.after.to_a).to eq(Issue.display_order.to_a)
       end
     end
+  end
+
+  it '#next returns nil when there is only 1 record' do
+    p = create_issue.display_order
+    expect(p.next).to be_nil
+    expect(p.next(true)).to be_nil
   end
 
   it 'is ordered correctly for order query [[:id, :asc]]' do
     a = create_issue
     b = create_issue
-    expect(a.id_order_asc.next_item).to eq b
-    expect(b.id_order_asc.prev_item).to eq a
-    expect([a] + a.id_order_asc.items_after.to_a).to eq(Issue.id_order_asc.to_a)
-    expect(b.id_order_asc.items_before.reverse.to_a + [b]).to eq(Issue.id_order_asc.to_a)
+    expect(a.id_order_asc.next).to eq b
+    expect(b.id_order_asc.previous).to eq a
+    expect([a] + a.id_order_asc.after.to_a).to eq(Issue.id_order_asc.to_a)
+    expect(b.id_order_asc.before.reverse.to_a + [b]).to eq(Issue.id_order_asc.to_a)
     expect(Issue.id_order_asc.count).to eq(2)
   end
 
@@ -92,7 +94,7 @@ describe 'OrderQuery.order_query' do
   it '#relative_order_by_query falls back to scope when order condition is missing self' do
     a = create_issue(priority: 'medium')
     b = create_issue(priority: 'high')
-    expect(a.relative_order_by_query(Issue.display_order, [[:priority, ['wontfix', 'askbob']], [:id, :desc]]).next_item).to eq(b)
+    expect(a.relative_order_by_query(Issue.display_order, [[:priority, ['wontfix', 'askbob']], [:id, :desc]]).next).to eq(b)
   end
 
   before do
