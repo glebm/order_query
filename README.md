@@ -85,7 +85,7 @@ SELECT  "issues".* FROM "issues"  WHERE
        (votes - suspicious_votes) = 4 AND (
            "issues"."updated_at" < '2014-03-19 10:23:18.671039' OR
            "issues"."updated_at" = '2014-03-19 10:23:18.671039' AND
-           "issues"."id" < 9)))
+               "issues"."id" < 9)))
 ORDER BY
   "issues"."priority"='high' DESC,
   "issues"."priority"='medium' DESC,
