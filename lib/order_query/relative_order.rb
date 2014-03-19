@@ -70,6 +70,10 @@ module OrderQuery
     #   y0 AND (x1 OR
     #           y1 AND (x2 OR
     #                   y2 AND x3))
+    #
+    # Since x matches order criteria with values that come before / after the current record,
+    # and y matches order criteria with values equal to the current record's value (for resolving ties),
+    # the resulting condition matches just the elements that come before / after the record
     def group_operators(term_pairs)
       # create "x OR y" string
       term = join_terms 'OR', *term_pairs[0]
@@ -93,7 +97,7 @@ module OrderQuery
 
     EMPTY_FILTER = ['', []]
 
-    # @return [query, params] Unless order attribute is unique, such as id, retrun ['WHERE value = ?', current value]. 
+    # @return [query, params] Unless order attribute is unique, such as id, return ['WHERE value = ?', current value].
     def where_eq(attr)
       if attr.unique?
         EMPTY_FILTER
@@ -103,6 +107,7 @@ module OrderQuery
     end
 
     # @param [:before or :after] mode
+    # @return [query, params] return query conditions for attribute values before / after the current one
     def where_mode(attr, mode)
       ord   = attr.order
       value = attr_value attr
