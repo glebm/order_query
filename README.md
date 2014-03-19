@@ -1,4 +1,4 @@
-order_query [![Build Status](https://travis-ci.org/glebm/order_query.png)](https://travis-ci.org/glebm/order_query) [![Code Climate](https://codeclimate.com/github/glebm/order_query.png)](https://codeclimate.com/github/glebm/order_query)
+order_query [![Build Status](https://travis-ci.org/glebm/order_query.png)](https://travis-ci.org/glebm/order_query) [![Code Climate](https://codeclimate.com/github/glebm/order_query.png)](https://codeclimate.com/github/glebm/order_query) [![Coverage Status](https://coveralls.io/repos/glebm/order_query/badge.png?branch=master)](https://coveralls.io/r/glebm/order_query?branch=master)
 ================================
 
 order_query provides ActiveRecord methods to find items relative to the position of a given one for a particular ordering. These methods are useful for many navigation scenarios, e.g. links to the next / previous search result from the show page in a typical index/search -> show scenario.
