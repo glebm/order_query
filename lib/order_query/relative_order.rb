@@ -47,7 +47,6 @@ module OrderQuery
     def items(mode)
       scope             = (mode == :after ? order.scope : order.reverse_scope)
       query, query_args = build_query(mode)
-
       if query
         scope.where(query, *query_args)
       else
@@ -58,73 +57,81 @@ module OrderQuery
     protected
 
     # @param [:before or :after] mode
+    # @return [query, parameters] conditions that exclude all elements not before / after the current one
     def build_query(mode)
-      # The next element will be the first one among elements with lesser order
-      build_query_factor(
-          order.map { |o| where_relative(o, mode) },
-          order.map { |o| where_eq(o) }
-      )
+      group_operators order.map { |term| [where_mode(term, mode), where_eq(term)] }
     end
 
-    # @param [Array] x query conditions
-    # @param [Array] y query conditions
-    # @return [query, query_args] The resulting query is as follows:
-    #   x0 | y0 &
-    #      (x1 | y1 &
-    #        (x2 | y2 &
-    #          (x3 | y3 & ... )))
-    #
-    # Explanation:
-    #
-    #   To narrow the result to only the records that come before / after the current one, build_query passes
-    #   the values of x and y so that:
-    #
-    #   x matches order criteria with values that come after the current record.
-    #   y matches order criteria with values equal to the current record's value, for resolving ties.
-    #
-    def build_query_factor(x, y, i = 0, n = x.length)
-      q = []
-
-      x_cond = [x[i][0].presence, x[i][1]]
-      q << x_cond if x_cond[0]
-
-      if i >= 1
-        q << ['AND'] << y[i - 1]
+    # Join conditions with operators and parenthesis
+    # @param [Array] term_pairs of query terms [[x0, y0], [x1, y1], ...],
+    #                xi, yi are pairs of [query, parameters]
+    # @return [query, parameters]
+    #   x0 OR
+    #   y0 AND (x1 OR
+    #           y1 AND (x2 OR
+    #                   y2 AND x3))
+    def group_operators(term_pairs)
+      # create "x OR y" string
+      term = join_terms 'OR', *term_pairs[0]
+      rest = term_pairs.from(1)
+      if rest.present?
+        # nest the remaining pairs recursively, appending them with " AND "
+        rest_grouped    = group_operators rest
+        rest_grouped[0] = "(#{rest_grouped[0]})" unless rest.length == 1
+        join_terms 'AND', term, rest_grouped
+      else
+        term
       end
+    end
 
-      if i < n - 1
-        q << ['OR'] if x_cond[0]
-        nested = build_query_factor(x, y, i + 1)
-        q << ["(#{nested[0]})", nested[1]]
-      end
-
-      [q.map { |e| e[0] }.join(' '),
-       q.map { |e| e[1] }.compact.reduce(:+) || []]
+    # joins terms with an operator
+    # @return [query, parameters]
+    def join_terms(op, *terms)
+      [terms.map { |t| t.first.presence }.compact.join(" #{op} "),
+       terms.map(&:second).reduce(:+) || []]
     end
 
     EMPTY_FILTER = ['', []]
 
-    def where_eq(spec)
-      ["#{spec.col_name_sql} = ?", [values[spec.name]]]
+    # @return [query, params] Unless order attribute is unique, such as id, retrun ['WHERE value = ?', current value]. 
+    def where_eq(attr)
+      if attr.unique?
+        EMPTY_FILTER
+      else
+        [%Q(#{attr.col_name_sql} = ?), [attr_value(attr)]]
+      end
     end
 
     # @param [:before or :after] mode
-    def where_relative(spec, mode)
-      ord   = spec.order
-      value = values[spec.name]
+    def where_mode(attr, mode)
+      ord   = attr.order
+      value = attr_value attr
       if ord.is_a?(Array)
-        # ord is an array of values, ordered first to last, e.g.
-        # all up to current
-        pos    = ord.index(value)
-        values = mode == :after ? ord.from(pos + 1) : ord.first(pos) if pos
+        # ord is an array of sort values, ordered first to last
+        pos         = ord.index(value)
+        sort_values = if pos
+                        dir = attr.order_order
+                        if mode == :after && dir == :desc || mode == :before && dir == :asc
+                          ord.from(pos + 1)
+                        else
+                          ord.first(pos)
+                        end
+                      else
+                        # default to all if current is not in sort order values
+                        ord
+                      end
         # if current not in result set, do not apply filter
-        return EMPTY_FILTER unless values.present?
-        ["#{spec.col_name_sql} IN (?)", [values]]
+        return EMPTY_FILTER unless sort_values.present?
+        ["#{attr.col_name_sql} IN (?)", [sort_values]]
       else
         # ord is :asc or :desc
         op = {before: {asc: '<', desc: '>'}, after: {asc: '>', desc: '<'}}[mode][ord || :asc]
-        ["#{spec.col_name_sql} #{op} ?", [value]]
+        ["#{attr.col_name_sql} #{op} ?", [value]]
       end
+    end
+
+    def attr_value(attr)
+      values[attr.name]
     end
   end
 end

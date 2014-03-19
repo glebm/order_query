@@ -89,10 +89,10 @@ describe 'OrderQuery.order_query' do
     expect(Issue.where(active: true).order_by_query([[:id, :desc]])).to have(1).record
   end
 
-  it '#relative_order_by_query falls back to scope when order space is missing self' do
+  it '#relative_order_by_query falls back to scope when order condition is missing self' do
     a = create_issue(priority: 'medium')
     b = create_issue(priority: 'high')
-    expect(a.relative_order_by_query(Issue.display_order, [[:priority, ['wontfix', 'askbob']]]).next_item).to eq(b)
+    expect(a.relative_order_by_query(Issue.display_order, [[:priority, ['wontfix', 'askbob']], [:id, :desc]]).next_item).to eq(b)
   end
 
   before do

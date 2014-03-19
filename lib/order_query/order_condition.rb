@@ -9,11 +9,11 @@ module OrderQuery
       @order            = line[1] || :asc
       @order_order      = line[2] || :desc
       @scope            = scope
-      @options[:unique] = true if name.to_s == 'id' && !@options.key?(:unique)
+      @unique           = @options.key?(:unique) ? !!@options[:unique] : name.to_s == 'id'
     end
 
     def unique?
-      !!options[:unique]
+      @unique
     end
 
     def col_name_sql

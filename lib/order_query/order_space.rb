@@ -2,6 +2,8 @@ require 'order_query/order_condition'
 module OrderQuery
   class OrderSpace
     include Enumerable
+    attr_reader :order
+
     delegate :each, :length, :size, to: :@order
 
     def initialize(scope, order)
