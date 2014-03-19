@@ -3,10 +3,8 @@
 order_query provides ActiveRecord methods to find items relative to the position of a given one for a particular ordering. These methods are useful for many navigation scenarios, e.g. links to the next / previous search result from the show page in a typical index/search -> show scenario.
 order_query generates queries that only use `WHERE`, `ORDER BY`, and `LIMIT`, and *not* `OFFSET`. It only takes 1 query (returning 1 row) to get the record before or after the given one.
 
-No gem has been released yet, to install from git:
-
 ```ruby
-gem 'order_query', git: 'https://github.com/glebm/order_query'
+gem 'order_query', '~> 0.1.0'
 ```
 
 ## Usage
