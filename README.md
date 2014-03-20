@@ -1,35 +1,42 @@
 # order_query [![Build Status][travis-badge]][travis] [![Code Climate][codeclimate-badge]][codeclimate] [![Coverage Status][coveralls-badge]][coveralls]
 
-#### You should use order_query if you are doing
-- showing a current item, and want to provide prev/next buttons to the nearby items
-- pagination plugins
+order_query gives you next or previous records relative to the current one efficiently.
 
-#### Why should I use order_query?
-- it is faster than using OFFSET
+For example, you have a list of items, sorted by priority. You have 10,000 items!
+If you are showing the user a single item, how do you provide buttons for the user to see the previous item or the next item?
 
-#### prev/next button example / explanation
+You could pass the item's position to the item page and use OFFSET in your SQL query.
+The downside of this, apart from having to pass a number that may change, is that the database cannot jump to the offset; it has to read every record until it reaches, say, the 9001st record.
+This is slow. Here is where `order_query` comes in!
 
-You have a list of items, sorted by priority. You have 10,000 items! If you are showing the user a single item, how do you provide buttons for the user to see the previous item or the next item?
+`order_query` uses the same ORDER BY query, but also includes a WHERE query that excludes records before (for next) or after (for prev) the current one.
 
-Normally you would pass the item's position to the item page and use OFFSET in your SQL query. The downside of this is that your DB cannot jump to the offset; it has to read every record until it reaches, say, the 9001st record. This is slow. Here is where `order_query` comes in!
+## Installation
 
-`order_query` uses the same sort as before (priority of the item), except that it includes a WHERE query that excludes records 0 to 9001. The database has an index for this (true?) and so it only needs to read records 9000 and 9002 to show the user the next previous and next items.
-
-#### pagination example / explanation
-
-You have a list of items, sorted by priority. You have 10,000 items! How do you show pages of items to a user? Normally you would use OFFSET in your SQL query. The downside of this is that your DB cannot jump to the offset; it has to read every record until it reaches, say, the 9001st record. This is slow. Here is where `order_query` comes in!
-`order_query` uses the same sort as before (priority of the item), except that it includes a WHERE query that excludes records 0 to 9001. The database has an index for this (true?) and so it only needs to read records 9002-9020 to show the user the next 20 items (or the next item).
-
----
-
-order_query provides ActiveRecord methods to find items relative to the position of a given one for a particular ordering. These methods are useful for many navigation scenarios, e.g. links to the next / previous search result from the show page in a typical index/search -> show scenario.
-order_query generates queries that only use `WHERE`, `ORDER BY`, and `LIMIT`, and *not* `OFFSET`. It only takes 1 query (returning 1 row) to get the record before or after the given one.
+Add to Gemfile:
 
 ```ruby
 gem 'order_query', '~> 0.1.0'
 ```
 
 ## Usage
+
+### Simple example
+
+```ruby
+class Post < ActiveRecord::Base
+  include OrderQuery
+  order_query :order_list, [
+    [:pinned, [true, false]],
+    [:published_at, :desc],
+    [:id, :desc]
+  ]
+end
+
+Post.find(31).order_list.next
+```
+
+### Advanced example
 
 ```ruby
 class Issue < ActiveRecord::Base
@@ -48,14 +55,14 @@ class Issue < ActiveRecord::Base
 end
 ```
 
-Order scopes:
+### Order scopes
 
 ```ruby
 Issue.order_display         #=> ActiveRecord::Relation<...>
 Issue.reverse_order_display #=> ActiveRecord::Relation<...>
 ```
 
-Relative order:
+### Relative order
 
 ```ruby
 # get the order object, scope default: Issue.all
@@ -69,6 +76,8 @@ p.position   #=> 5
 p.next       #=> Issue<...>
 p.after      #=> ActiveRecord::Relation<...>
 ```
+
+### Dynamic criteria
 
 `order_query` defines methods that call `.order_by_query` and `#relative_order_by_query`, also public:
 
@@ -98,6 +107,7 @@ Where `x` correspond to `>` / `<` terms, and `y` to `=` terms (for resolving tie
 A query may then look like this (with `?` for values):
 
 ```sql
+-- Current record: priority='high' (votes - suspicious_votes)=4 updated_at='2014-03-19 10:23:18.671039' id=9
 SELECT  "issues".* FROM "issues"  WHERE
   ("issues"."priority" IN ('medium','low') OR
    "issues"."priority" = 'high' AND (
