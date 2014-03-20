@@ -5,11 +5,11 @@ order_query gives you next or previous records relative to the current one effic
 For example, you have a list of items, sorted by priority. You have 10,000 items!
 If you are showing the user a single item, how do you provide buttons for the user to see the previous item or the next item?
 
-You could pass the item's position to the item page and use OFFSET in your SQL query.
+You could pass the item's position to the item page and use `OFFSET` in your SQL query.
 The downside of this, apart from having to pass a number that may change, is that the database cannot jump to the offset; it has to read every record until it reaches, say, the 9001st record.
 This is slow. Here is where `order_query` comes in!
 
-`order_query` uses the same ORDER BY query, but also includes a WHERE query that excludes records before (for next) or after (for prev) the current one.
+`order_query` uses the same `ORDER BY` query, but also includes a `WHERE` clause that excludes records before (for next) or after (for prev) the current one.
 
 ## Installation
 
