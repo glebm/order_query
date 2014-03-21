@@ -45,7 +45,7 @@ Post.reverse_order_list #=> ActiveRecord::Relation<...>
 
 ### Relative order
 
-`order_query` also makes an instance method available for querying relative to the record:
+`order_query` also adds an instance method for querying relative to the record:
 
 ```ruby
 # get the order object, scope default: Post.all
@@ -88,7 +88,7 @@ end
 ### Dynamic criteria
 
 Including `OrderQuery` adds `.order_by_query` and `#relative_order_by_query`.
-These methods can be called directly directly with order criteria:
+These methods can be called directly directly with the order criteria:
 
 ```ruby
 Issue.order_by_query([[:id, :desc]])         #=> ActiveRecord::Relation<...>
