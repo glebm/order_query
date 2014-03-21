@@ -87,8 +87,8 @@ end
 
 ### Dynamic criteria
 
-`include OrderQuery` adds `.order_by_query` and `#relative_order_by_query` methods.
-These can be called directly directly with order criteria:
+Including `OrderQuery` adds `.order_by_query` and `#relative_order_by_query`.
+These methods can be called directly directly with order criteria:
 
 ```ruby
 Issue.order_by_query([[:id, :desc]])         #=> ActiveRecord::Relation<...>
