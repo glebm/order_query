@@ -104,7 +104,7 @@ LIMIT 1
 
 Where `x` correspond to `>` / `<` terms, and `y` to `=` terms (for resolving ties), per order criterion.
 
-A query may then look like this (with `?` for values):
+A query may then look like this:
 
 ```sql
 -- Current record: priority='high' (votes - suspicious_votes)=4 updated_at='2014-03-19 10:23:18.671039' id=9
