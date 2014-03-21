@@ -21,7 +21,7 @@ gem 'order_query', '~> 0.1.0'
 
 ## Usage
 
-### Simple example
+Define the criteria with `order_query`:
 
 ```ruby
 class Post < ActiveRecord::Base
@@ -32,18 +32,48 @@ class Post < ActiveRecord::Base
     [:id, :desc]
   ]
 end
-
-Post.find(31).order_list.next
 ```
 
-### Advanced example
+### Order scopes
+
+Defining the criteria adds `ORDER BY` scopes:
+
+```ruby
+Post.order_list #=> ActiveRecord::Relation<...>
+Post.reverse_order_list #=> ActiveRecord::Relation<...>
+```
+
+### Relative order
+
+`order_query` also makes an instance method available for querying relative to the record:
+
+```ruby
+# get the order object, scope default: Post.all
+p = Post.find(31).order_list(scope) #=> OrderQuery::RelativeOrder<...>
+p.before         #=> ActiveRecord::Relation<...>
+p.previous       #=> Post<...>
+# pass true to #next and #previous in order to loop onto the the first / last record
+# will not loop onto itself
+p.previous(true) #=> Post<...>
+p.position   #=> 5
+p.next       #=> Post<...>
+p.after      #=> ActiveRecord::Relation<...>
+```
+
+### Advanced options
+
+There is a number of advanced options to help you:
 
 ```ruby
 class Issue < ActiveRecord::Base
   include OrderQuery
   order_query :order_display, [
-    [:priority, %w(high medium low)],
+    # Pass an array for attribute order, and an optional sort direction for the array,
+    # default is *:desc*, so that first in the array <=> first in the result
+    [:priority, %w(high medium low), :desc],
+    # Sort attribute can be a method name, provided you pass :sql for the attribute
     [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
+    # Default sort order for non-array attributes is :asc, just like SQL
     [:updated_at, :desc],
     # pass unique: true for unique attributes to get more optimized queries
     # default: true for primary_key, false otherwise
@@ -55,37 +85,24 @@ class Issue < ActiveRecord::Base
 end
 ```
 
-### Order scopes
-
-```ruby
-Issue.order_display         #=> ActiveRecord::Relation<...>
-Issue.reverse_order_display #=> ActiveRecord::Relation<...>
-```
-
-### Relative order
-
-```ruby
-# get the order object, scope default: Issue.all
-p = Issue.find(31).order_display(scope)
-p.before         #=> ActiveRecord::Relation<...>
-p.previous       #=> Issue<...>
-# pass true to #next and #previous in order to loop onto the the first / last record
-# will not loop onto itself
-p.previous(true) #=> Issue<...>
-p.position   #=> 5
-p.next       #=> Issue<...>
-p.after      #=> ActiveRecord::Relation<...>
-```
-
 ### Dynamic criteria
 
-`order_query` defines methods that call `.order_by_query` and `#relative_order_by_query`, also public:
+`include OrderQuery` adds `.order_by_query` and `#relative_order_by_query` methods.
+These can be called directly directly with order criteria:
 
 ```ruby
 Issue.order_by_query([[:id, :desc]])         #=> ActiveRecord::Relation<...>
 Issue.reverse_order_by_query([[:id, :desc]]) #=> ActiveRecord::Relation<...>
 Issue.find(31).relative_order_by_query([[:id, :desc]]).next #=> Issue<...>
 Issue.find(31).relative_order_by_query(Issue.visible, [[:id, :desc]]).next #=> Issue<...>
+```
+
+This is especially helpful if the order criteria is dynamic, so `order_query` cannot be used to define them beforehand.
+For example, consider ordering by a list of ids returned from an elasticsearh query:
+
+```ruby
+ids = Issue.keyword_search('ruby') #=> [7, 3, 5]
+Issue.where(id: ids).order_by_query([[:id, ids]]).to_a #=> [Issue<id=7>, Issue<id=3>, Issue<id=5>]
 ```
 
 ## How it works
@@ -107,7 +124,22 @@ Where `x` correspond to `>` / `<` terms, and `y` to `=` terms (for resolving tie
 A query may then look like this:
 
 ```sql
--- Current record: priority='high' (votes - suspicious_votes)=4 updated_at='2014-03-19 10:23:18.671039' id=9
+-- Current post: pinned=true published_at='2014-03-21 15:01:35.064096' id=9
+SELECT "posts".* FROM "posts"  WHERE
+  ("posts"."pinned" = 'f' OR
+   "posts"."pinned" = 't' AND (
+      "posts"."published_at" < '2014-03-21 15:01:35.064096' OR
+      "posts"."published_at" = '2014-03-21 15:01:35.064096' AND "posts"."id" < 9))
+ORDER BY
+  "posts"."pinned"='t' DESC,
+  "posts"."pinned"='f' DESC, "posts"."published_at" DESC, "posts"."id" DESC
+LIMIT 1
+```
+
+A query for the advanced example would look like this:
+
+```sql
+-- Current issue: priority='high' (votes - suspicious_votes)=4 updated_at='2014-03-19 10:23:18.671039' id=9
 SELECT  "issues".* FROM "issues"  WHERE
   ("issues"."priority" IN ('medium','low') OR
    "issues"."priority" = 'high' AND (
