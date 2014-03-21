@@ -129,7 +129,11 @@ module OrderQuery
                       end
         # if current not in result set, do not apply filter
         return EMPTY_FILTER unless sort_values.present?
-        ["#{attr.col_name_sql} IN (?)", [sort_values]]
+        if sort_values.length == 1
+          ["#{attr.col_name_sql} = ?", [sort_values]]
+        else
+          ["#{attr.col_name_sql} IN (?)", [sort_values]]
+        end
       else
         # ord is :asc or :desc
         op = {before: {asc: '<', desc: '>'}, after: {asc: '>', desc: '<'}}[mode][ord || :asc]
