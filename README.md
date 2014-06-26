@@ -158,6 +158,8 @@ ORDER BY
 LIMIT 1
 ```
 
+See how this affects query planning in Markus Winand's slides on [Pagination done the Right Way](http://use-the-index-luke.com/blog/2013-07/pagination-done-the-postgresql-way).
+
 This project uses MIT license.
 
 
