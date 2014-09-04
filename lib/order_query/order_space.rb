@@ -21,7 +21,7 @@ module OrderQuery
       @scope.order(order_by_reverse_sql)
     end
 
-    SORT_DIRECTIONS = %i(asc desc).freeze
+    SORT_DIRECTIONS = [:asc, :desc].freeze
 
     # @return [String]
     def sort_direction_sql(direction)
