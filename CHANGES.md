@@ -1,6 +1,7 @@
-## 0.1.2 (unreleased)
+## 0.1.2
 
-* Wrap top-level `OR` with an `AND` for [performance reasons](https://github.com/glebm/order_query/issues/3).
+* Wrap top-level `OR` with a redundant `AND` for [performance reasons](https://github.com/glebm/order_query/issues/3).
+* Remove redundant parens from the query
 
 ## 0.1.1
 
