@@ -17,12 +17,12 @@ module OrderQuery
     # @return [query, parameters] conditions that exclude all elements not before / after the current one
     def build_query(mode)
       conditions = order.conditions
-      terms = conditions.map { |cond| [where_mode(cond, mode, strict: true), where_eq(cond)] }
+      terms = conditions.map { |cond| [where_mode(cond, mode, true), where_eq(cond)] }
       query = group_operators terms
       # Wrap top level OR clause for performance, see https://github.com/glebm/order_query/issues/3
       if self.class.wrap_top_level_or && !terms[0].include?(EMPTY_FILTER)
         join_terms 'AND'.freeze,
-                   where_mode(conditions.first, mode, strict: false),
+                   where_mode(conditions.first, mode, false),
                    ["(#{query[0]})", query[1]]
       else
         query
@@ -73,7 +73,7 @@ module OrderQuery
       end
     end
 
-    def where_ray(cond, from, mode, strict: true)
+    def where_ray(cond, from, mode, strict = true)
       ops = %w(< >)
       ops = ops.reverse if mode == :after
       op  = {asc: ops[0], desc: ops[1]}[cond.order || :asc]
@@ -93,14 +93,14 @@ module OrderQuery
 
     # @param [:before or :after] mode
     # @return [query, params] return query conditions for attribute values before / after the current one
-    def where_mode(cond, mode, strict: true)
+    def where_mode(cond, mode, strict = true)
       value = attr_value cond
       if cond.ray?
-        where_ray cond, value, mode, strict: strict
+        where_ray cond, value, mode, strict
       else
         # ord is an array of sort values, ordered first to last
         # if current not in result set, do not apply filter
-        where_in cond, cond.values_around(value, mode, strict: strict)
+        where_in cond, cond.values_around(value, mode, strict)
       end
     end
 

@@ -23,7 +23,7 @@ module OrderQuery
     # @param [Object] value
     # @param [:before, :after] mode
     # @return [Array] valid order values before / after passed (depending on the mode)
-    def values_around(value, mode, strict: true)
+    def values_around(value, mode, strict = true)
       ord = order
       pos = ord.index(value)
       if pos
