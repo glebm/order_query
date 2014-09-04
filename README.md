@@ -37,7 +37,7 @@ end
 An order condition is specified as an attribute name, optionally an ordered list of values, and a sort direction.
 Additional options are:
 
-| option key | description                                                                                             |
+| option     | description                                                                                             |
 |------------|---------------------------------------------------------------------------------------------------------|
 | unique     | Unique attribute, avoids redundant comparisons. Default: `true` for primary key, `false` otherwise.     |
 | complete   | Complete attribute, avoids redundant comparisons. Default: `false` for ordered lists, `true` otherwise. |
@@ -45,16 +45,16 @@ Additional options are:
 
 ### Order scopes
 
-This defines order scopes for querying:
+Order scopes are defined by `order_query`:
 
 ```ruby
 Post.order_for_index         #=> ActiveRecord::Relation<...>
 Post.reverse_order_for_index #=> ActiveRecord::Relation<...>
 ```
 
-### Records around a given one
+### Before, after, previous, and next
 
-An instance method is added
+An method is added by `order_query` to query around a record:
 
 ```ruby
 # get the order object, scope default: Post.all
@@ -69,9 +69,7 @@ p.next       #=> Post<...>
 p.after      #=> ActiveRecord::Relation<...>
 ```
 
-### Advanced options
-
-Pass arrays and custom sql as order conditions:
+#### Order conditions, advanced example
 
 ```ruby
 class Issue < ActiveRecord::Base
@@ -79,7 +77,7 @@ class Issue < ActiveRecord::Base
   order_query :order_display, [
     # Pass an array for attribute order, and an optional sort direction for the array,
     # default is *:desc*, so that first in the array <=> first in the result
-    [:priority, %w(high medium low), :desc],
+    [:priority, %w(high medium low), :desc, complete: true],
     # Sort attribute can be a method name, provided you pass :sql for the attribute
     [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
     # Default sort order for non-array attributes is :asc, just like SQL
@@ -167,7 +165,7 @@ LIMIT 1
 ```
 
 The top-level `x0 OR ..` clause is actually wrapped with `x0' AND (x0 OR ...)`, where *x0'* is a non-strict condition,
-for [performance reasons](https://github.com/glebm/order_query/issues/3).
+for [performance reasons](https://github.com/glebm/order_query/issues/3). This can be disabled with `OrderQuery::WhereBuilder.wrap_top_level_or = false`.
 
 See how this affects query planning in Markus Winand's slides on [Pagination done the Right Way](http://use-the-index-luke.com/blog/2013-07/pagination-done-the-postgresql-way).
 
