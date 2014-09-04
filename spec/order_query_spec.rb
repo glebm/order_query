@@ -4,7 +4,7 @@ require 'spec_helper'
 class Post < ActiveRecord::Base
   include OrderQuery
   order_query :order_list, [
-      [:pinned, [true, false]],
+      [:pinned, [true, false], complete: true],
       [:published_at, :desc],
       [:id, :desc]
   ]
@@ -17,7 +17,7 @@ end
 # Advanced example
 class Issue < ActiveRecord::Base
   DISPLAY_ORDER = [
-      [:priority, %w(high medium low)],
+      [:priority, %w(high medium low), complete: true],
       [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
       [:updated_at, :desc],
       [:id, :desc]

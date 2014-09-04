@@ -21,35 +21,44 @@ gem 'order_query', '~> 0.1.2'
 
 ## Usage
 
-Define the criteria with `order_query`:
+Define a list of order conditions with `order_query`:
 
 ```ruby
 class Post < ActiveRecord::Base
   include OrderQuery
-  order_query :order_list, [
-    [:pinned, [true, false]],
+  order_query :order_for_index, [
+    [:pinned, [true, false], complete: true],
     [:published_at, :desc],
     [:id, :desc]
   ]
 end
 ```
 
+An order condition is specified as an attribute name, optionally an ordered list of values, and a sort direction.
+Additional options are:
+
+| option key | description                                                                                             |
+|------------|---------------------------------------------------------------------------------------------------------|
+| unique     | Unique attribute, avoids redundant comparisons. Default: `true` for primary key, `false` otherwise.     |
+| complete   | Complete attribute, avoids redundant comparisons. Default: `false` for ordered lists, `true` otherwise. |
+| sql        | Customize attribute value SQL                                                                           |
+
 ### Order scopes
 
-Defining the criteria adds `ORDER BY` scopes:
+This defines order scopes for querying:
 
 ```ruby
-Post.order_list #=> ActiveRecord::Relation<...>
-Post.reverse_order_list #=> ActiveRecord::Relation<...>
+Post.order_for_index         #=> ActiveRecord::Relation<...>
+Post.reverse_order_for_index #=> ActiveRecord::Relation<...>
 ```
 
-### Records relative to a given one
+### Records around a given one
 
-`order_query` also adds an instance method for querying relative to the record:
+An instance method is added
 
 ```ruby
 # get the order object, scope default: Post.all
-p = Post.find(31).order_list(scope) #=> OrderQuery::RelativeOrder<...>
+p = Post.find(31).order_for_index(scope) #=> OrderQuery::RelativeOrder<...>
 p.before         #=> ActiveRecord::Relation<...>
 p.previous       #=> Post<...>
 # pass true to #next and #previous in order to loop onto the the first / last record

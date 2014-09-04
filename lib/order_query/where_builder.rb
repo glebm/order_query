@@ -16,14 +16,11 @@ module OrderQuery
     # @param [:before or :after] mode
     # @return [query, parameters] conditions that exclude all elements not before / after the current one
     def build_query(mode)
-      conditions = order.conditions
-      terms = conditions.map { |cond| [where_mode(cond, mode, true), where_eq(cond)] }
-      query = group_operators terms
+      conds = order.conditions
+      query = group_operators conds.map { |cond| [where_mode(cond, mode, true), (where_eq(cond) unless cond.unique?)].compact }
       # Wrap top level OR clause for performance, see https://github.com/glebm/order_query/issues/3
-      if self.class.wrap_top_level_or && !terms[0].include?(EMPTY_FILTER)
-        join_terms 'AND'.freeze,
-                   where_mode(conditions.first, mode, false),
-                   ["(#{query[0]})", query[1]]
+      if self.class.wrap_top_level_or && !conds.first.unique?
+        join_terms 'AND'.freeze, where_mode(conds.first, mode, false), ["(#{query[0]})", query[1]]
       else
         query
       end
@@ -44,7 +41,7 @@ module OrderQuery
     def group_operators(term_pairs)
       # create "x OR y" string
       disjunctive = join_terms 'OR'.freeze, *term_pairs[0]
-      rest = term_pairs.from(1)
+      rest        = term_pairs.from(1)
       if rest.present?
         # nest the remaining pairs recursively, appending them with " AND "
         rest_grouped    = group_operators rest
@@ -62,15 +59,36 @@ module OrderQuery
        terms.map(&:second).reduce(:+) || []]
     end
 
-    EMPTY_FILTER = [''.freeze, []]
-
-    # @return [query, params] Unless order attribute is unique, such as id, return ['WHERE value = ?', current value].
-    def where_eq(cond)
-      if cond.unique?
-        EMPTY_FILTER
+    # @param [:before or :after] mode
+    # @return [query, params] return query conditions for attribute values before / after the current one
+    def where_mode(cond, mode, strict = true)
+      value = attr_value cond
+      if cond.list?
+        values = cond.filter_values(value, mode, strict)
+        if cond.complete? && values.length == cond.order.length
+          WHERE_IDENTITY
+        else
+          where_in cond, values
+        end
       else
-        [%Q(#{cond.col_name_sql} = ?).freeze, [attr_value(cond)]]
+        where_ray cond, value, mode, strict
       end
+    end
+
+
+    def where_in(cond, values)
+      case values.length
+        when 0
+          WHERE_IDENTITY
+        when 1
+          where_eq cond, values[0]
+        else
+          ["#{cond.col_name_sql} IN (?)".freeze, [values]]
+      end
+    end
+
+    def where_eq(cond, value = attr_value(cond))
+      [%Q(#{cond.col_name_sql} = ?).freeze, [value]]
     end
 
     def where_ray(cond, from, mode, strict = true)
@@ -80,29 +98,7 @@ module OrderQuery
       ["#{cond.col_name_sql} #{op}#{'=' unless strict} ?".freeze, [from]]
     end
 
-    def where_in(cond, values)
-      case values.length
-        when 0
-          EMPTY_FILTER
-        when 1
-          ["#{cond.col_name_sql} = ?".freeze, [values]]
-        else
-          ["#{cond.col_name_sql} IN (?)".freeze, [values]]
-      end
-    end
-
-    # @param [:before or :after] mode
-    # @return [query, params] return query conditions for attribute values before / after the current one
-    def where_mode(cond, mode, strict = true)
-      value = attr_value cond
-      if cond.ray?
-        where_ray cond, value, mode, strict
-      else
-        # ord is an array of sort values, ordered first to last
-        # if current not in result set, do not apply filter
-        where_in cond, cond.values_around(value, mode, strict)
-      end
-    end
+    WHERE_IDENTITY = [''.freeze, [].freeze].freeze
 
     def attr_value(cond)
       record.send cond.name
