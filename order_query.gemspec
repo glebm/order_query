@@ -20,6 +20,6 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'activerecord', '~> 4.0'
   s.add_dependency 'activesupport', '~> 4.0'
-  s.add_development_dependency 'rspec', '~> 2.14'
+  s.add_development_dependency 'rspec', '~> 3.0'
   s.add_development_dependency 'rake', '~> 10.2'
 end

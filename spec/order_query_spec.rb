@@ -98,13 +98,13 @@ describe 'OrderQuery.order_query' do
 
     it '.order_by_query works on a list of ids' do
       ids = (1..3).map { create_issue.id }
-      expect(Issue.order_by_query([[:id, ids]])).to have(ids.length).issues
+      expect(Issue.order_by_query([[:id, ids]]).size).to eq ids.length
     end
 
     it '.order_by_query preserves previous' do
       create_issue(active: true)
-      expect(Issue.where(active: false).order_by_query([[:id, :desc]])).to have(0).records
-      expect(Issue.where(active: true).order_by_query([[:id, :desc]])).to have(1).record
+      expect(Issue.where(active: false).order_by_query([[:id, :desc]])).to be_empty
+      expect(Issue.where(active: true).order_by_query([[:id, :desc]]).size).to eq 1
     end
 
     it '#relative_order_by_query falls back to scope when order condition is missing self' do

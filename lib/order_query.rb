@@ -6,19 +6,20 @@ module OrderQuery
   extend ActiveSupport::Concern
 
   included do
-    # @return [OrderSpace] order definition
-    # @example
-    #   Issue.order_query [[:id, :desc]] #=> <ActiveRecord::Relation#...>
-    scope :order_by_query, ->(order) { OrderSpace.new(self, order).scope }
-    scope :reverse_order_by_query, ->(order) { OrderSpace.new(self, order).reverse_scope }
+    scope :order_by_query, ->(order_spec) { OrderSpace.new(self, order_spec).scope }
+    scope :reverse_order_by_query, ->(order_spec) { OrderSpace.new(self, order_spec).reverse_scope }
   end
 
-  def relative_order_by_query(scope = self.class.all, order)
-    RelativeOrder.new(self, scope, order)
+  # @param [ActiveRecord::Relation] scope
+  # @param [Array<Array<Symbol,String>>] order_spec
+  def relative_order_by_query(scope = self.class.all, order_spec)
+    RelativeOrder.new(self, OrderSpace.new(scope, order_spec))
   end
 
   module ClassMethods
     protected
+    # @param [Symbol] name
+    # @param [Array<Array<Symbol,String>>] order_spec
     # @example
     #   class Issue
     #     order_query :order_display, [[:created_at, :desc], [:id, :desc]]
@@ -26,12 +27,11 @@ module OrderQuery
     #
     #   Issue.order_display #=> <ActiveRecord::Relation#...>
     #   Issue.active.find(31).display_order(Issue.active).next  #=> <Issue#...>
-    def order_query(name, order)
-      scope name, -> { order_by_query(order) }
-      scope :"reverse_#{name}", -> { reverse_order_by_query(order) }
-      define_method(name) do |scope = nil|
-        scope ||= self.class.all
-        relative_order_by_query(scope, order)
+    def order_query(name, order_spec)
+      scope name, -> { order_by_query(order_spec) }
+      scope :"reverse_#{name}", -> { reverse_order_by_query(order_spec) }
+      define_method name do |scope = nil|
+        relative_order_by_query scope || self.class.all, order_spec
       end
     end
   end
