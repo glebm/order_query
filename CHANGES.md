@@ -1,3 +1,7 @@
+## 0.1.3
+
+* New condition option `complete` for list conditions for optimized query generation
+
 ## 0.1.2
 
 * Wrap top-level `OR` with a redundant `AND` for [performance reasons](https://github.com/glebm/order_query/issues/3).
