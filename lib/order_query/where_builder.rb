@@ -19,6 +19,7 @@ module OrderQuery
       conditions = order.conditions
       terms = conditions.map { |cond| [where_mode(cond, mode, strict: true), where_eq(cond)] }
       query = group_operators terms
+      # Wrap top level OR clause for performance, see https://github.com/glebm/order_query/issues/3
       if self.class.wrap_top_level_or && !terms[0].include?(EMPTY_FILTER)
         join_terms 'AND'.freeze,
                    where_mode(conditions.first, mode, strict: false),
