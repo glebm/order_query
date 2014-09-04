@@ -9,11 +9,11 @@ module OrderQuery
     delegate :scope, :reverse_scope, to: :order
 
     # @param [ActiveRecord::Base] record
-    # @param [OrderQuery::OrderSpace] order
-    def initialize(record, order)
+    # @param [OrderQuery::OrderSpace] order_space
+    def initialize(record, order_space)
       @record = record
-      @order  = order
-      @query_builder = WhereBuilder.new record, order
+      @order  = order_space
+      @query_builder = WhereBuilder.new record, order_space
     end
 
     # @return [ActiveRecord::Base]

@@ -43,7 +43,7 @@ Post.order_list #=> ActiveRecord::Relation<...>
 Post.reverse_order_list #=> ActiveRecord::Relation<...>
 ```
 
-### Relative order
+### Records relative to a given one
 
 `order_query` also adds an instance method for querying relative to the record:
 
@@ -62,7 +62,7 @@ p.after      #=> ActiveRecord::Relation<...>
 
 ### Advanced options
 
-There is a number of advanced options to help you:
+Pass arrays and custom sql as order conditions:
 
 ```ruby
 class Issue < ActiveRecord::Base
@@ -85,10 +85,9 @@ class Issue < ActiveRecord::Base
 end
 ```
 
-### Dynamic criteria
+### Dynamic order conditions
 
-Including `OrderQuery` adds `.order_by_query` and `#relative_order_by_query`.
-These methods can be called directly directly with the order criteria:
+To query with dynamic order conditions use `Model.order_by_query` and `Model#relative_order_by_query`:
 
 ```ruby
 Issue.order_by_query([[:id, :desc]])         #=> ActiveRecord::Relation<...>
@@ -97,12 +96,11 @@ Issue.find(31).relative_order_by_query([[:id, :desc]]).next #=> Issue<...>
 Issue.find(31).relative_order_by_query(Issue.visible, [[:id, :desc]]).next #=> Issue<...>
 ```
 
-This is especially helpful if the order criteria is dynamic, so `order_query` cannot be used to define them beforehand.
 For example, consider ordering by a list of ids returned from an elasticsearh query:
 
 ```ruby
 ids = Issue.keyword_search('ruby') #=> [7, 3, 5]
-Issue.where(id: ids).order_by_query([[:id, ids]]).to_a #=> [Issue<id=7>, Issue<id=3>, Issue<id=5>]
+Issue.where(id: ids).order_by_query([[:id, ids]]).first(2).to_a #=> [Issue<id=7>, Issue<id=3>]
 ```
 
 ## How it works
@@ -131,8 +129,9 @@ SELECT "posts".* FROM "posts"  WHERE
       "posts"."published_at" < '2014-03-21 15:01:35.064096' OR
       "posts"."published_at" = '2014-03-21 15:01:35.064096' AND "posts"."id" < 9))
 ORDER BY
-  "posts"."pinned"='t' DESC,
-  "posts"."pinned"='f' DESC, "posts"."published_at" DESC, "posts"."id" DESC
+  "posts"."pinned"='t' DESC, "posts"."pinned"='f' DESC,
+  "posts"."published_at" DESC,
+  "posts"."id" DESC
 LIMIT 1
 ```
 
@@ -157,6 +156,9 @@ ORDER BY
   "issues"."id" DESC
 LIMIT 1
 ```
+
+The top-level `x0 OR ..` clause is actually wrapped with `x0' AND (x0 OR ...)`, where *x0'* is a non-strict condition,
+for [performance reasons](https://github.com/glebm/order_query/issues/3).
 
 See how this affects query planning in Markus Winand's slides on [Pagination done the Right Way](http://use-the-index-luke.com/blog/2013-07/pagination-done-the-postgresql-way).
 

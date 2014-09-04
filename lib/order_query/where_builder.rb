@@ -16,7 +16,16 @@ module OrderQuery
     # @param [:before or :after] mode
     # @return [query, parameters] conditions that exclude all elements not before / after the current one
     def build_query(mode)
-      group_operators order.map { |term| [where_mode(term, mode), where_eq(term)] }
+      conditions = order.conditions
+      terms = conditions.map { |cond| [where_mode(cond, mode, strict: true), where_eq(cond)] }
+      query = group_operators terms
+      if self.class.wrap_top_level_or && !terms[0].include?(EMPTY_FILTER)
+        join_terms 'AND'.freeze,
+                   where_mode(conditions.first, mode, strict: false),
+                   ["(#{query[0]})", query[1]]
+      else
+        query
+      end
     end
 
     # Join conditions with operators and parenthesis
@@ -33,15 +42,15 @@ module OrderQuery
     # the resulting condition matches just the elements that come before / after the record
     def group_operators(term_pairs)
       # create "x OR y" string
-      term = join_terms 'OR', *term_pairs[0]
+      disjunctive = join_terms 'OR'.freeze, *term_pairs[0]
       rest = term_pairs.from(1)
       if rest.present?
         # nest the remaining pairs recursively, appending them with " AND "
         rest_grouped    = group_operators rest
         rest_grouped[0] = "(#{rest_grouped[0]})" unless rest.length == 1
-        join_terms 'AND', term, rest_grouped
+        join_terms 'AND'.freeze, disjunctive, rest_grouped
       else
-        term
+        disjunctive
       end
     end
 
@@ -52,58 +61,55 @@ module OrderQuery
        terms.map(&:second).reduce(:+) || []]
     end
 
-    EMPTY_FILTER = ['', []]
+    EMPTY_FILTER = [''.freeze, []]
 
     # @return [query, params] Unless order attribute is unique, such as id, return ['WHERE value = ?', current value].
-    def where_eq(attr)
-      if attr.unique?
+    def where_eq(cond)
+      if cond.unique?
         EMPTY_FILTER
       else
-        [%Q(#{attr.col_name_sql} = ?), [attr_value(attr)]]
+        [%Q(#{cond.col_name_sql} = ?).freeze, [attr_value(cond)]]
       end
     end
 
-    def where_ray(attr, from, strict = true, reverse = false)
+    def where_ray(cond, from, mode, strict: true)
       ops = %w(< >)
-      ops = ops.reverse if reverse
-      op  = {asc: ops[0], desc: ops[1]}[attr.order || :asc]
-      ["#{attr.col_name_sql} #{op}#{'=' unless strict} ?", [from]]
+      ops = ops.reverse if mode == :after
+      op  = {asc: ops[0], desc: ops[1]}[cond.order || :asc]
+      ["#{cond.col_name_sql} #{op}#{'=' unless strict} ?".freeze, [from]]
+    end
+
+    def where_in(cond, values)
+      case values.length
+        when 0
+          EMPTY_FILTER
+        when 1
+          ["#{cond.col_name_sql} = ?".freeze, [values]]
+        else
+          ["#{cond.col_name_sql} IN (?)".freeze, [values]]
+      end
     end
 
     # @param [:before or :after] mode
     # @return [query, params] return query conditions for attribute values before / after the current one
-    def where_mode(attr, mode)
-      ord   = attr.order
-      value = attr_value attr
-      if ord.is_a?(Array)
-        # ord is an array of sort values, ordered first to last
-        pos         = ord.index(value)
-        sort_values = if pos
-                        dir = attr.order_order
-                        if mode == :after && dir == :desc || mode == :before && dir == :asc
-                          ord.from(pos + 1)
-                        else
-                          ord.first(pos)
-                        end
-                      else
-                        # default to all if current is not in sort order values
-                        ord
-                      end
-        # if current not in result set, do not apply filter
-        return EMPTY_FILTER unless sort_values.present?
-        if sort_values.length == 1
-          ["#{attr.col_name_sql} = ?", [sort_values]]
-        else
-          ["#{attr.col_name_sql} IN (?)", [sort_values]]
-        end
+    def where_mode(cond, mode, strict: true)
+      value = attr_value cond
+      if cond.ray?
+        where_ray cond, value, mode, strict: strict
       else
-        # ord is :asc or :desc
-        where_ray(attr, value, true, mode == :after)
+        # ord is an array of sort values, ordered first to last
+        # if current not in result set, do not apply filter
+        where_in cond, cond.values_around(value, mode, strict: strict)
       end
     end
 
-    def attr_value(attr)
-      record.send attr.name
+    def attr_value(cond)
+      record.send cond.name
     end
+
+    class << self
+      attr_accessor :wrap_top_level_or
+    end
+    self.wrap_top_level_or = true
   end
 end

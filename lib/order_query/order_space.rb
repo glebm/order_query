@@ -2,16 +2,13 @@ require 'order_query/order_condition'
 module OrderQuery
   # Combine order specification with a scope
   class OrderSpace
-    include Enumerable
-    attr_reader :order
-
-    delegate :each, :length, :size, to: :@order
+    attr_reader :conditions
 
     # @param [ActiveRecord::Relation] scope
     # @param [Array<Array<Symbol,String>>] order_spec
     def initialize(scope, order_spec)
       @scope = scope
-      @order = order_spec.map { |spec| OrderCondition.new(scope, spec) }
+      @conditions = order_spec.map { |spec| OrderCondition.new(scope, spec) }
     end
 
     # @return [ActiveRecord::Relation]
@@ -37,16 +34,16 @@ module OrderQuery
 
     # @return [Array<String>]
     def order_by_sql_clauses
-      @order.map { |spec|
-        case order_spec = spec.order
+      conditions.map { |cond|
+        case order_spec = cond.order
           when Symbol
-            "#{spec.col_name_sql} #{sort_direction_sql order_spec}".freeze
+            "#{cond.col_name_sql} #{sort_direction_sql order_spec}".freeze
           when Enumerable
             order_spec.map { |v|
-              "#{spec.col_name_sql}=#{@scope.connection.quote v} #{spec.order_order.to_s.upcase}"
+              "#{cond.col_name_sql}=#{@scope.connection.quote v} #{cond.order_order.to_s.upcase}"
             }.join(', ').freeze
           else
-            raise ArgumentError.new("Invalid order #{order_spec.inspect} (#{spec.inspect})")
+            raise ArgumentError.new("Invalid order #{order_spec.inspect} (#{cond.inspect})")
         end
       }
     end

@@ -4,6 +4,7 @@ gemspec
 
 group :test, :development do
   gem 'coveralls', require: false
+  gem 'byebug', platform: :mri_21, require: false
 end
 
 platform :mri, :rbx do
