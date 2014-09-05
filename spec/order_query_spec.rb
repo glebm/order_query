@@ -37,14 +37,14 @@ def create_issue(attr = {})
 end
 
 def with_wrap_top_level(value)
-  builder = OrderQuery::WhereBuilder
+  conf = ::OrderQuery
   around do |ex|
-    was = builder.wrap_top_level_or
+    was = conf.wrap_top_level_or
     begin
-      builder.wrap_top_level_or = value
+      conf.wrap_top_level_or = value
       ex.run
     ensure
-      builder.wrap_top_level_or = was
+      conf.wrap_top_level_or = was
     end
   end
 end
@@ -113,21 +113,21 @@ describe 'OrderQuery' do
           expect(Issue.id_order_asc.count).to eq(2)
         end
 
-        it '.order_by_query works on a list of ids' do
+        it '.order_by works on a list of ids' do
           ids = (1..3).map { create_issue.id }
-          expect(Issue.order_by_query([[:id, ids]]).size).to eq ids.length
+          expect(Issue.order_by([[:id, ids]]).size).to eq ids.length
         end
 
-        it '.order_by_query preserves previous' do
+        it '.order_by preserves previous' do
           create_issue(active: true)
-          expect(Issue.where(active: false).order_by_query([[:id, :desc]])).to be_empty
-          expect(Issue.where(active: true).order_by_query([[:id, :desc]]).size).to eq 1
+          expect(Issue.where(active: false).order_by([[:id, :desc]])).to be_empty
+          expect(Issue.where(active: true).order_by([[:id, :desc]]).size).to eq 1
         end
 
-        it '#relative_order_by_query falls back to scope when order condition is missing self' do
+        it '#order_by falls back to scope when order condition is missing self' do
           a = create_issue(priority: 'medium')
           b = create_issue(priority: 'high')
-          expect(a.relative_order_by_query(Issue.display_order, [[:priority, ['wontfix', 'askbob']], [:id, :desc]]).next).to eq(b)
+          expect(a.order_by(Issue.display_order, [[:priority, ['wontfix', 'askbob']], [:id, :desc]]).next).to eq(b)
         end
 
         before do

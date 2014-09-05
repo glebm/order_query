@@ -1,19 +1,18 @@
-require 'order_query/order_space'
-require 'order_query/where_builder'
+require 'order_query/space'
+require 'order_query/sql/where'
 
 module OrderQuery
-
-  # Search around a record in a scope
-  class RelativeOrder
-    attr_reader :record, :order
-    delegate :scope, :reverse_scope, to: :order
+  # Search around a record in an order space
+  class Point
+    attr_reader :record, :space
+    delegate :scope, :reverse_scope, to: :space
 
     # @param [ActiveRecord::Base] record
-    # @param [OrderQuery::OrderSpace] order_space
-    def initialize(record, order_space)
-      @record = record
-      @order  = order_space
-      @query_builder = WhereBuilder.new record, order_space
+    # @param [OrderQuery::Space] space
+    def initialize(record, space)
+      @record    = record
+      @space     = space
+      @where_sql = SQL::Where.new(self)
     end
 
     # @return [ActiveRecord::Base]
@@ -60,8 +59,8 @@ module OrderQuery
     # @param [:before, :after] direction
     # @return [ActiveRecord::Relation]
     def records(direction)
-      scope             = (direction == :after ? order.scope : order.reverse_scope)
-      query, query_args = @query_builder.build_query(direction)
+      query, query_args = @where_sql.build(direction)
+      scope = (direction == :after ? space.scope : space.reverse_scope)
       if query.present?
         scope.where(query, *query_args)
       else

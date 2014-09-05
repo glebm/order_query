@@ -1,22 +1,28 @@
 require 'active_support'
 require 'active_record'
-require 'order_query/relative_order'
+require 'order_query/space'
+require 'order_query/point'
 
 module OrderQuery
   extend ActiveSupport::Concern
 
-  included do
-    scope :order_by_query, ->(order_spec) { OrderSpace.new(self, order_spec).scope }
-    scope :reverse_order_by_query, ->(order_spec) { OrderSpace.new(self, order_spec).reverse_scope }
-  end
-
   # @param [ActiveRecord::Relation] scope
   # @param [Array<Array<Symbol,String>>] order_spec
-  def relative_order_by_query(scope = self.class.all, order_spec)
-    RelativeOrder.new(self, OrderSpace.new(scope, order_spec))
+  def order_by(scope = nil, order_spec)
+    scope ||= self.class.all
+    Point.new(self, Space.new(scope, order_spec))
   end
 
   module ClassMethods
+    def order_by(order_spec)
+      Space.new(self, order_spec).scope
+    end
+
+    def reverse_order_by(order_spec)
+      Space.new(self, order_spec).reverse_scope
+    end
+
+    #= DSL
     protected
     # @param [Symbol] name
     # @param [Array<Array<Symbol,String>>] order_spec
@@ -28,11 +34,17 @@ module OrderQuery
     #   Issue.order_display #=> <ActiveRecord::Relation#...>
     #   Issue.active.find(31).display_order(Issue.active).next  #=> <Issue#...>
     def order_query(name, order_spec)
-      scope name, -> { order_by_query(order_spec) }
-      scope :"reverse_#{name}", -> { reverse_order_by_query(order_spec) }
+      scope name, -> { order_by(order_spec) }
+      scope :"reverse_#{name}", -> { reverse_order_by(order_spec) }
       define_method name do |scope = nil|
-        relative_order_by_query scope || self.class.all, order_spec
+        order_by scope, order_spec
       end
     end
   end
+
+  class << self
+    attr_accessor :wrap_top_level_or
+  end
+  # Wrap top-level or with an AND and a redundant condition for performance
+  self.wrap_top_level_or = true
 end

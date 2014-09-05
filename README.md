@@ -94,20 +94,20 @@ end
 
 ### Dynamic order conditions
 
-To query with dynamic order conditions use `Model.order_by_query` and `Model#relative_order_by_query`:
+To query with dynamic order conditions use `Model.order_by` and `Model#order_by`:
 
 ```ruby
-Issue.order_by_query([[:id, :desc]])         #=> ActiveRecord::Relation<...>
-Issue.reverse_order_by_query([[:id, :desc]]) #=> ActiveRecord::Relation<...>
-Issue.find(31).relative_order_by_query([[:id, :desc]]).next #=> Issue<...>
-Issue.find(31).relative_order_by_query(Issue.visible, [[:id, :desc]]).next #=> Issue<...>
+Issue.order_by([[:id, :desc]])         #=> ActiveRecord::Relation<...>
+Issue.visible.reverse_order_by([[:id, :desc]]) #=> ActiveRecord::Relation<...>
+Issue.find(31).order_by([[:id, :desc]]).next #=> Issue<...>
+Issue.find(31).order_by(Issue.visible, [[:id, :desc]]).next #=> Issue<...>
 ```
 
-For example, consider ordering by a list of ids returned from an elasticsearh query:
+For example, consider ordering by a list of ids returned from an elasticsearch query:
 
 ```ruby
 ids = Issue.keyword_search('ruby') #=> [7, 3, 5]
-Issue.where(id: ids).order_by_query([[:id, ids]]).first(2).to_a #=> [Issue<id=7>, Issue<id=3>]
+Issue.where(id: ids).order_by([[:id, ids]]).first(2).to_a #=> [Issue<id=7>, Issue<id=3>]
 ```
 
 ## How it works
