@@ -1,6 +1,11 @@
 require 'spec_helper'
 
-# Simple example
+# Bare model
+class User < ActiveRecord::Base
+  include OrderQuery
+end
+
+# Simple model
 class Post < ActiveRecord::Base
   include OrderQuery
   order_query :order_list, [
@@ -14,7 +19,7 @@ def create_post(attr = {})
   Post.create!({pinned: false, published_at: Time.now}.merge(attr))
 end
 
-# Advanced example
+# Advanced model
 class Issue < ActiveRecord::Base
   DISPLAY_ORDER = [
       [:priority, %w(high medium low), complete: true],
@@ -36,7 +41,7 @@ def create_issue(attr = {})
   Issue.create!({priority: 'high', votes: 3, suspicious_votes: 0, updated_at: Time.now}.merge(attr))
 end
 
-def with_wrap_top_level(value)
+def wrap_top_level_or(value)
   conf = ::OrderQuery
   around do |ex|
     was = conf.wrap_top_level_or
@@ -53,7 +58,7 @@ describe 'OrderQuery' do
 
   [false, true].each do |wrap_top_level_or|
     context "(wrap_top_level_or: #{wrap_top_level_or})" do
-      with_wrap_top_level wrap_top_level_or
+      wrap_top_level_or wrap_top_level_or
 
       context 'Issue test model' do
         t        = Time.now
@@ -185,6 +190,41 @@ describe 'OrderQuery' do
           ActiveRecord::Migration.drop_table :posts
         end
       end
+    end
+  end
+
+  context 'SQL generation' do
+    context 'wrap top-level OR on' do
+      wrap_top_level_or true
+      it 'wraps top-level OR' do
+        after_scope = User.create!(updated_at: Date.parse('2014-09-06')).order_by([[:updated_at, :desc], [:id, :desc]]).after
+        expect(after_scope.to_sql).to include('<=')
+      end
+    end
+
+    context 'wrap top-level OR off' do
+      wrap_top_level_or false
+      it 'does not wrap top-level OR' do
+        after_scope = User.create!(updated_at: Date.parse('2014-09-06')).order_by([[:updated_at, :desc], [:id, :desc]]).after
+        expect(after_scope.to_sql).to_not include('<=')
+      end
+    end
+
+    before do
+      User.delete_all
+    end
+
+    before :all do
+      ActiveRecord::Schema.define do
+        self.verbose = false
+        create_table :users do |t|
+          t.datetime :updated_at, null: false
+        end
+      end
+    end
+
+    after :all do
+      ActiveRecord::Migration.drop_table :users
     end
   end
 end
