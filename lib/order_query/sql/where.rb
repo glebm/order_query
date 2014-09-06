@@ -19,7 +19,7 @@ module OrderQuery
       #     invoices = 3 AND (
       #       ... ))
       def build(side)
-        # generate pairs such sales < 5, sales = 5
+        # generate pairs of terms such as sales < 5, sales = 5
         parts = point.space.conditions.map { |cond|
           [where_side(cond, side, true), where_tie(cond)].reject { |x| x == WHERE_IDENTITY }
         }
