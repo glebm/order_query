@@ -46,7 +46,7 @@ module OrderQuery
       # joins terms with an operator
       # @return [query, parameters]
       def join_terms(op, *terms)
-        [terms.map(&:first).reject(&:blank?).join(" #{op} "), terms.map(&:second).reduce([], :+)]
+        [terms.map(&:first).reject(&:empty?).join(" #{op} "), terms.map(&:second).reduce([], :+)]
       end
 
       def wrap_term_with_parens(t)
