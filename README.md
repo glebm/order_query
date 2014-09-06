@@ -27,7 +27,7 @@ Define a list of order conditions with `order_query`:
 class Post < ActiveRecord::Base
   include OrderQuery
   order_query :order_for_index, [
-    [:pinned, [true, false], complete: true],
+    [:pinned, [true, false]],
     [:published_at, :desc],
     [:id, :desc]
   ]
@@ -37,11 +37,11 @@ end
 An order condition is specified as an attribute name, optionally an ordered list of values, and a sort direction.
 Additional options are:
 
-| option     | description                                                                                             |
-|------------|---------------------------------------------------------------------------------------------------------|
-| unique     | Unique attribute, avoids redundant comparisons. Default: `true` for primary key, `false` otherwise.     |
-| complete   | Complete attribute, avoids redundant comparisons. Default: `false` for ordered lists, `true` otherwise. |
-| sql        | Customize attribute value SQL                                                                           |
+| option     | description                                                                |
+|------------|----------------------------------------------------------------------------|
+| unique     | Unique attribute. Default: `true` for primary key, `false` otherwise.      |
+| complete   | Enum attribute contains all the possible values. Default: `true`.          |
+| sql        | Customize attribute value SQL                                              |
 
 ### Order scopes
 
@@ -77,7 +77,7 @@ class Issue < ActiveRecord::Base
   order_query :order_display, [
     # Pass an array for attribute order, and an optional sort direction for the array,
     # default is *:desc*, so that first in the array <=> first in the result
-    [:priority, %w(high medium low), :desc, complete: true],
+    [:priority, %w(high medium low), :desc],
     # Sort attribute can be a method name, provided you pass :sql for the attribute
     [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
     # Default sort order for non-array attributes is :asc, just like SQL

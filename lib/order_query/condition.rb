@@ -18,7 +18,7 @@ module OrderQuery
       end
       @options  = options.reverse_merge(
           unique:   name.to_s == scope.primary_key,
-          complete: !@order_enum
+          complete: true
       )
       @unique   = @options[:unique]
       @complete = @options[:complete]
