@@ -1,3 +1,7 @@
+## 0.2.0
+
+* Dynamic query methods renamed to `order_by`
+
 ## 0.1.3
 
 * New condition option `complete` for list conditions for optimized query generation
