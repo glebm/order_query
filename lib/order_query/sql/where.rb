@@ -10,10 +10,13 @@ module OrderQuery
         @point = point
       end
 
+      def conditions
+        point.space.conditions
+      end
+
       # @param [:before or :after] mode
       # @return [query, parameters] conditions that exclude all elements not before / after the current one
       def build(mode)
-        conditions = point.space.conditions
         # pairs of [x0, y0]
         pairs = conditions.map { |cond|
           [where_relative(cond, mode, true), (where_eq(cond) unless cond.unique?)].reject { |x|
@@ -21,14 +24,8 @@ module OrderQuery
           }.compact
         }
         query = group_operators pairs
-        return query unless ::OrderQuery.wrap_top_level_or
-        # Wrap top level OR clause for performance, see https://github.com/glebm/order_query/issues/3
-        top_pair_idx = pairs.index(&:present?)
-        if top_pair_idx &&
-            (top_pair = pairs[top_pair_idx]).length == 2 &&
-            (top_level_cond = conditions[top_pair_idx]) &&
-            (redundant_cond = where_relative(top_level_cond, mode, false)) != top_pair.first
-          join_terms 'AND'.freeze, redundant_cond, wrap_parens(query)
+        if ::OrderQuery.wrap_top_level_or
+          wrap_top_level_or query, mode, pairs
         else
           query
         end
@@ -59,6 +56,27 @@ module OrderQuery
         end
       end
 
+      # Wrap top level OR clause to help DB with using the index
+      # Before:
+      #   (sales < 5 OR
+      #     (sales = 5 AND ...))
+      # After:
+      #   (sales <= 5 AND
+      #    (sales < 5 OR
+      #       (sales = 5 AND ...)))
+      # Read more at https://github.com/glebm/order_query/issues/3
+      def wrap_top_level_or(query, mode, pairs)
+        top_pair_idx = pairs.index(&:present?)
+        if top_pair_idx &&
+            (top_pair = pairs[top_pair_idx]).length == 2 &&
+            (top_level_cond = conditions[top_pair_idx]) &&
+            (redundant_cond = where_relative(top_level_cond, mode, false)) != top_pair.first
+          join_terms 'AND'.freeze, redundant_cond, wrap_parens(query)
+        else
+          query
+        end
+      end
+
       def wrap_parens(t)
         ["(#{t[0]})", t[1]]
       end
@@ -85,7 +103,6 @@ module OrderQuery
           where_ray cond, value, mode, strict
         end
       end
-
 
       def where_in(cond, values)
         case values.length
