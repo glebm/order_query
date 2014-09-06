@@ -73,12 +73,6 @@ module OrderQuery
         end
       end
 
-      # @return [Array<[query,params]>] queries for a side, and a tie-breaker if necessary:
-      #   [['sales < ?', 5], ['sales = ?', 5]
-      def where_filter_and_tie(cond, side)
-
-      end
-
       # @return [query, params] tie-breaker unless condition is unique
       def where_tie(cond)
         if cond.unique?
@@ -131,7 +125,7 @@ module OrderQuery
 
       # Turn [a, b, c] into a * (b * c)
       # Read more: http://www.haskell.org/haskellwiki/Fold
-      def foldr(z, list, i = 0, &op)
+      def foldr(z, list, &op)
         if list.empty?
           z
         else
