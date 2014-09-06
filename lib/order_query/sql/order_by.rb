@@ -22,15 +22,17 @@ module OrderQuery
 
       # @return [Array<String>]
       def order_by_sql_clauses
-        space.conditions.map { |cond|
-          if cond.order_enum
-            cond.order_enum.map { |v|
-              "#{cond.sql.column_name}=#{cond.sql.quote v} #{cond.order.to_s.upcase}"
-            }.join(', ').freeze
-          else
-            "#{cond.sql.column_name} #{sort_direction_sql cond.order}".freeze
-          end
-        }
+        space.conditions.map { |cond| condition_clause cond }
+      end
+
+      def condition_clause(cond)
+        dir_sql = sort_direction_sql cond.order
+        col_sql = cond.sql.column_name
+        if cond.order_enum
+          cond.order_enum.map { |v| "#{col_sql}=#{cond.sql.quote v} #{dir_sql}" }.join(', ').freeze
+        else
+          "#{col_sql} #{dir_sql}".freeze
+        end
       end
 
       SORT_DIRECTIONS = [:asc, :desc].freeze

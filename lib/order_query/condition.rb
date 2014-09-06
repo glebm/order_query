@@ -16,18 +16,12 @@ module OrderQuery
         else
           @order = spec[1] || :asc
       end
-      @options  = options
-      @unique   = if options.key?(:unique)
-                    !!options[:unique]
-                  else
-                    name.to_s == scope.primary_key
-                  end
-      @complete = if options.key?(:complete)
-                    !!options[:complete]
-                  else
-                    !@order_enum
-                  end
-
+      @options  = options.reverse_merge(
+          unique:   name.to_s == scope.primary_key,
+          complete: !@order_enum
+      )
+      @unique   = @options[:unique]
+      @complete = @options[:complete]
       @sql = SQL::Condition.new(self, scope)
     end
 
