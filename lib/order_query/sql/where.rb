@@ -38,8 +38,8 @@ module OrderQuery
       # @return [query, params] terms right-folded with sql_operator
       #   [A, B, C, ...] -> A AND (B AND (C AND ...))
       def foldr_terms(terms, sql_operator)
-        foldr WHERE_IDENTITY, terms do |a, b, ri|
-          join_terms sql_operator, a, (ri >= 2 ? wrap_term_with_parens(b) : b)
+        foldr_i WHERE_IDENTITY, terms do |a, b, i|
+          join_terms sql_operator, a, (i > 1 ? wrap_term_with_parens(b) : b)
         end
       end
 
@@ -123,15 +123,13 @@ module OrderQuery
 
       private
 
-      # Turn [a, b, c] into a * (b * c)
-      # Read more: http://www.haskell.org/haskellwiki/Fold
-      def foldr(z, list, &op)
-        if list.empty?
-          z
-        else
-          first, *rest = list
-          op.call first, foldr(z, rest, &op), rest.length
-        end
+      # Inject with index from right to left, turning [a, b, c] into a + (b + c)
+      # Passes an index to the block, counting from the right
+      # Read more about folds:
+      # * http://www.haskell.org/haskellwiki/Fold
+      # * http://en.wikipedia.org/wiki/Fold_(higher-order_function)
+      def foldr_i(z, xs, &f)
+        xs.reverse_each.each_with_index.inject(z) { |b, (a, i)| f.call a, b, i }
       end
     end
   end
