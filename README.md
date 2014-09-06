@@ -164,8 +164,9 @@ ORDER BY
 LIMIT 1
 ```
 
-The top-level `x0 OR ..` clause is actually wrapped with `x0' AND (x0 OR ...)`, where *x0'* is a non-strict condition,
-for [performance reasons](https://github.com/glebm/order_query/issues/3). This can be disabled with `OrderQuery::WhereBuilder.wrap_top_level_or = false`.
+The actual query is a bit different because `order_query` wraps the top-level `OR` with a (redundant) non-strict condition `x0' AND (x0 OR ...)`
+for [performance reasons](https://github.com/glebm/order_query/issues/3).
+This can be disabled with `OrderQuery.wrap_top_level_or = false`.
 
 See how this affects query planning in Markus Winand's slides on [Pagination done the Right Way](http://use-the-index-luke.com/blog/2013-07/pagination-done-the-postgresql-way).
 
