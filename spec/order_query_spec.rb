@@ -88,7 +88,7 @@ describe 'OrderQuery' do
             issues = ds.map do |attr|
               Issue.new(priority: attr[0], votes: attr[1], suspicious_votes: attr[2], updated_at: attr[3])
             end
-            issues.reverse_each(&:save!)
+            issues.shuffle.reverse_each(&:save!)
             expect(Issue.display_order.to_a).to eq(issues)
             issues.each_slice(2) do |prev, cur|
               cur ||= issues.first

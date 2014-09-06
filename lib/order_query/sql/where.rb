@@ -10,41 +10,47 @@ module OrderQuery
         @point = point
       end
 
+      # Join condition pairs with OR, and nest within each other with AND
       # @param [:before or :after] side
-      # @return [query, parameters] conditions that exclude all elements not before / after the current one
+      # @return [query, parameters] WHERE conditions matching records strictly before / after this one
+      #   sales < 5 OR
+      #   sales = 5 AND (
+      #     invoice < 3 OR
+      #     invoices = 3 AND (
+      #       ... ))
       def build(side)
-        # pairs of [x0, y0]
-        conditions = point.space.conditions
-        parts      = conditions.map { |cond| where_filter_and_tie cond, side }
-        query      = combine_query parts
+        # generate pairs such sales < 5, sales = 5
+        parts = point.space.conditions.map { |cond|
+          [where_side(cond, side, true), where_tie(cond)].reject { |x| x == WHERE_IDENTITY }
+        }
+        # group pairwise with OR, and nest with AND
+        query = foldr_terms parts.map { |terms| join_terms 'OR'.freeze, *terms }, 'AND'.freeze
         if ::OrderQuery.wrap_top_level_or
-          wrap_top_level_or query, conditions, parts, side
-        else
-          query
+          # wrap in a redundant AND clause for performance
+          query = wrap_top_level_or query, parts, side
         end
+        query
       end
 
       protected
 
-      # Join condition pairs internally with OR, and nested within each other with AND
-      # @param [Array<[filter_query,tie_query]>] term_pairs of query terms [[x0, y0], [x1, y1], ...],
-      #                xi, yi are pairs of [query, parameters]
-      # @return [query, parameters]
-      #   x0 OR
-      #   y0 AND (x1 OR
-      #           y1 AND (x2 OR
-      #                   y2 AND x3))
-      #
-      # Since x matches order criteria with values that come before / after the current record,
-      # and y matches order criteria with values equal to the current record's value (for resolving ties),
-      # the resulting condition matches just the elements that come before / after the record
-      def combine_query(term_pairs)
-        terms = term_pairs.map do |terms|
-          join_terms 'OR'.freeze, *terms
-        end
+      # @param [String] sql_operator SQL operator
+      # @return [query, params] terms right-folded with sql_operator
+      #   [A, B, C, ...] -> A AND (B AND (C AND ...))
+      def foldr_terms(terms, sql_operator)
         foldr WHERE_IDENTITY, terms do |a, b, ri|
-          join_terms 'AND'.freeze, a, ri >= 2 ? wrap_parens(b) : b
+          join_terms sql_operator, a, (ri >= 2 ? wrap_term_with_parens(b) : b)
         end
+      end
+
+      # joins terms with an operator
+      # @return [query, parameters]
+      def join_terms(op, *terms)
+        [terms.map(&:first).reject(&:blank?).join(" #{op} "), terms.map(&:second).reduce([], :+)]
+      end
+
+      def wrap_term_with_parens(t)
+        ["(#{t[0]})", t[1]]
       end
 
       # Wrap top level OR clause to help DB with using the index
@@ -56,37 +62,27 @@ module OrderQuery
       #    (sales < 5 OR
       #       (sales = 5 AND ...)))
       # Read more at https://github.com/glebm/order_query/issues/3
-      def wrap_top_level_or(query, conditions, pairs, side)
+      def wrap_top_level_or(query, pairs, side)
         top_pair_idx = pairs.index(&:present?)
         if top_pair_idx &&
             (top_pair = pairs[top_pair_idx]).length == 2 &&
-            (top_level_cond = conditions[top_pair_idx]) &&
-            (redundant_cond = where_side(top_level_cond, side, false)) != top_pair.first
-          join_terms 'AND'.freeze, redundant_cond, wrap_parens(query)
+            top_pair.first != (redundant_cond = where_side(point.space.conditions[top_pair_idx], side, false))
+          join_terms 'AND'.freeze, redundant_cond, wrap_term_with_parens(query)
         else
           query
         end
       end
 
-      def wrap_parens(t)
-        ["(#{t[0]})", t[1]]
-      end
-
-      # joins terms with an operator
-      # @return [query, parameters]
-      def join_terms(op, *terms)
-        [terms.map(&:first).reject(&:blank?).join(" #{op} "), terms.map(&:second).reduce([], :+)]
-      end
-
       # @return [Array<[query,params]>] queries for a side, and a tie-breaker if necessary:
       #   [['sales < ?', 5], ['sales = ?', 5]
       def where_filter_and_tie(cond, side)
-        [where_side(cond, side, true), where_tie(cond)].reject { |x| x == WHERE_IDENTITY || x == WHERE_NONE }
+
       end
 
+      # @return [query, params] tie-breaker unless condition is unique
       def where_tie(cond)
         if cond.unique?
-          WHERE_NONE
+          WHERE_IDENTITY
         else
           where_eq(cond)
         end
@@ -110,7 +106,7 @@ module OrderQuery
       def where_in(cond, values)
         case values.length
           when 0
-            WHERE_NONE
+            WHERE_IDENTITY
           when 1
             where_eq cond, values[0]
           else
@@ -130,7 +126,6 @@ module OrderQuery
       end
 
       WHERE_IDENTITY = [''.freeze, [].freeze].freeze
-      WHERE_NONE     = ['∅'.freeze, [].freeze].freeze
 
       private
 
