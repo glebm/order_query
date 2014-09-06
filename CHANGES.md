@@ -1,3 +1,7 @@
+## 0.2.1
+
+* `complete` now defaults to true for list attributes as well.
+
 ## 0.2.0
 
 * Dynamic query methods renamed to `order_by`

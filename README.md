@@ -16,7 +16,7 @@ This is slow. Here is where `order_query` comes in!
 Add to Gemfile:
 
 ```ruby
-gem 'order_query', '~> 0.2.0'
+gem 'order_query', '~> 0.2.1'
 ```
 
 ## Usage
