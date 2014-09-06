@@ -10,29 +10,24 @@ module OrderQuery
         @point = point
       end
 
-      def conditions
-        point.space.conditions
-      end
-
-      # @param [:before or :after] mode
+      # @param [:before or :after] side
       # @return [query, parameters] conditions that exclude all elements not before / after the current one
-      def build(mode)
+      def build(side)
         # pairs of [x0, y0]
-        pairs = conditions.map { |cond|
-          [where_relative(cond, mode, true), (where_eq(cond) unless cond.unique?)].reject { |x|
-            x.nil? || x == WHERE_IDENTITY || x == WHERE_NONE
-          }.compact
-        }
-        query = group_operators pairs
+        conditions = point.space.conditions
+        parts      = conditions.map { |cond| where_filter_and_tie cond, side }
+        query      = combine_query parts
         if ::OrderQuery.wrap_top_level_or
-          wrap_top_level_or query, mode, pairs
+          wrap_top_level_or query, conditions, parts, side
         else
           query
         end
       end
 
+      protected
+
       # Join condition pairs internally with OR, and nested within each other with AND
-      # @param [Array] term_pairs of query terms [[x0, y0], [x1, y1], ...],
+      # @param [Array<[filter_query,tie_query]>] term_pairs of query terms [[x0, y0], [x1, y1], ...],
       #                xi, yi are pairs of [query, parameters]
       # @return [query, parameters]
       #   x0 OR
@@ -43,16 +38,12 @@ module OrderQuery
       # Since x matches order criteria with values that come before / after the current record,
       # and y matches order criteria with values equal to the current record's value (for resolving ties),
       # the resulting condition matches just the elements that come before / after the record
-      def group_operators(term_pairs)
-        # create "x OR y" string
-        disjunctive = join_terms 'OR'.freeze, *term_pairs[0]
-        rest        = term_pairs.from(1)
-        if rest.present?
-          # nest the remaining pairs recursively, appending them with " AND "
-          rest_grouped = group_operators rest
-          join_terms 'AND'.freeze, disjunctive, (rest.length == 1 ? rest_grouped : wrap_parens(rest_grouped))
-        else
-          disjunctive
+      def combine_query(term_pairs)
+        terms = term_pairs.map do |terms|
+          join_terms 'OR'.freeze, *terms
+        end
+        foldr WHERE_IDENTITY, terms do |a, b, ri|
+          join_terms 'AND'.freeze, a, ri >= 2 ? wrap_parens(b) : b
         end
       end
 
@@ -65,12 +56,12 @@ module OrderQuery
       #    (sales < 5 OR
       #       (sales = 5 AND ...)))
       # Read more at https://github.com/glebm/order_query/issues/3
-      def wrap_top_level_or(query, mode, pairs)
+      def wrap_top_level_or(query, conditions, pairs, side)
         top_pair_idx = pairs.index(&:present?)
         if top_pair_idx &&
             (top_pair = pairs[top_pair_idx]).length == 2 &&
             (top_level_cond = conditions[top_pair_idx]) &&
-            (redundant_cond = where_relative(top_level_cond, mode, false)) != top_pair.first
+            (redundant_cond = where_side(top_level_cond, side, false)) != top_pair.first
           join_terms 'AND'.freeze, redundant_cond, wrap_parens(query)
         else
           query
@@ -84,23 +75,35 @@ module OrderQuery
       # joins terms with an operator
       # @return [query, parameters]
       def join_terms(op, *terms)
-        [terms.map { |t| t.first.presence }.compact.join(" #{op} "),
-         terms.map(&:second).reduce(:+) || []]
+        [terms.map(&:first).reject(&:blank?).join(" #{op} "), terms.map(&:second).reduce([], :+)]
       end
 
-      # @param [:before or :after] mode
+      # @return [Array<[query,params]>] queries for a side, and a tie-breaker if necessary:
+      #   [['sales < ?', 5], ['sales = ?', 5]
+      def where_filter_and_tie(cond, side)
+        [where_side(cond, side, true), where_tie(cond)].reject { |x| x == WHERE_IDENTITY || x == WHERE_NONE }
+      end
+
+      def where_tie(cond)
+        if cond.unique?
+          WHERE_NONE
+        else
+          where_eq(cond)
+        end
+      end
+
+      # @param [:before or :after] side
       # @return [query, params] return query conditions for attribute values before / after the current one
-      def where_relative(cond, mode, strict = true)
-        value = attr_value cond
+      def where_side(cond, side, strict = true, value = point.value(cond))
         if cond.order_enum
-          values = cond.filter_values(value, mode, strict)
+          values = cond.enum_side(value, side, strict)
           if cond.complete? && values.length == cond.order_enum.length
             WHERE_IDENTITY
           else
             where_in cond, values
           end
         else
-          where_ray cond, value, mode, strict
+          where_ray cond, value, side, strict
         end
       end
 
@@ -115,7 +118,7 @@ module OrderQuery
         end
       end
 
-      def where_eq(cond, value = attr_value(cond))
+      def where_eq(cond, value = point.value(cond))
         [%Q(#{cond.sql.column_name} = ?).freeze, [value]]
       end
 
@@ -129,8 +132,17 @@ module OrderQuery
       WHERE_IDENTITY = [''.freeze, [].freeze].freeze
       WHERE_NONE     = ['∅'.freeze, [].freeze].freeze
 
-      def attr_value(cond)
-        point.record.send cond.name
+      private
+
+      # Turn [a, b, c] into a * (b * c)
+      # Read more: http://www.haskell.org/haskellwiki/Fold
+      def foldr(z, list, i = 0, &op)
+        if list.empty?
+          z
+        else
+          first, *rest = list
+          op.call first, foldr(z, rest, &op), rest.length
+        end
       end
     end
   end

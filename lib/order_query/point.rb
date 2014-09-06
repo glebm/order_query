@@ -48,24 +48,32 @@ module OrderQuery
 
     # @return [ActiveRecord::Relation]
     def after
-      records :after
+      side :after
     end
 
     # @return [ActiveRecord::Relation]
     def before
-      records :before
+      side :before
     end
 
-    # @param [:before, :after] direction
+    # @param [:before, :after] side
     # @return [ActiveRecord::Relation]
-    def records(direction)
-      query, query_args = @where_sql.build(direction)
-      scope = (direction == :after ? space.scope : space.reverse_scope)
+    def side(side)
+      query, query_args = @where_sql.build(side)
+      scope = if side == :after
+                space.scope
+              else
+                space.reverse_scope
+              end
       if query.present?
         scope.where(query, *query_args)
       else
         scope
       end
+    end
+
+    def value(cond)
+      record.send(cond.name)
     end
 
     protected

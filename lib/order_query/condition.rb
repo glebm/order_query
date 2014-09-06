@@ -40,14 +40,17 @@ module OrderQuery
     end
 
     # @param [Object] value
-    # @param [:before, :after] mode
-    # @return [Array] valid order values before / after passed (depending on the mode)
-    def filter_values(value, mode, strict = true)
+    # @param [:before, :after] side
+    # @return [Array] valid order values before / after passed (depending on the side)
+    # @example for [:difficulty, ['Easy', 'Normal', 'Hard']]:
+    #  enum_side('Normal', :after) #=> ['Hard']
+    #  enum_side('Normal', :after, false) #=> ['Normal', 'Hard']
+    def enum_side(value, side, strict = true)
       ord = order_enum
       pos = ord.index(value)
       if pos
         dir = order
-        if mode == :after && dir == :desc || mode == :before && dir == :asc
+        if side == :after && dir == :desc || side == :before && dir == :asc
           ord.from pos + (strict ? 1 : 0)
         else
           ord.first pos + (strict ? 0 : 1)
