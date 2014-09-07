@@ -1,7 +1,10 @@
+# coding: utf-8
 require 'order_query/sql/condition'
 module OrderQuery
+  # An order condition (sort column)
   class Condition
-    attr_reader :name, :order, :order_enum, :options, :sql
+    attr_reader :name, :order, :order_enum, :options
+    delegate :column_name, :quote, to: :@sql
 
     # @option spec [String] :unique    Mark the attribute as unique to avoid redundant conditions
     # @option spec [String] :complete  Mark the condition's domain as complete to avoid redundant conditions (only for array conditions)
@@ -22,7 +25,7 @@ module OrderQuery
       )
       @unique   = @options[:unique]
       @complete = @options[:complete]
-      @sql = SQL::Condition.new(self, scope)
+      @sql      = SQL::Condition.new(self, scope)
     end
 
     def unique?
@@ -56,7 +59,15 @@ module OrderQuery
     end
 
     def inspect
-      "Condition(#{@name.inspect}#{" #{@order_enum.inspect}" if @order_enum} #{@order.to_s.upcase} #{'unique ' if @unique}#{@complete ? 'complete' : 'partial' if @order_enum})"
+      parts = [
+          @name,
+          (@order_enum.inspect if order_enum),
+          ('unique' if @unique),
+          ('complete' if order_enum && complete?),
+          (column_name if options[:sql]),
+          {desc: '▼', asc: '▲'}[@order]
+      ].compact
+      "(#{parts.join(' ')})"
     end
   end
 end

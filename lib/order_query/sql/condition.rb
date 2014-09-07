@@ -12,8 +12,7 @@ module OrderQuery
         @column_name ||= begin
           sql = condition.options[:sql]
           if sql
-            sql = sql.call if sql.respond_to?(:call)
-            sql
+            sql.respond_to?(:call) ? sql.call : sql
           else
             connection.quote_table_name(scope.table_name) + '.' + connection.quote_column_name(condition.name)
           end

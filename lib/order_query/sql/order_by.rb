@@ -1,35 +1,33 @@
 module OrderQuery
   module SQL
     class OrderBy
-      attr_reader :space
-
       # @param [Array<Condition>]
-      def initialize(space)
-        @space = space
+      def initialize(conditions)
+        @conditions = conditions
       end
 
       # @return [String]
       def build
-        join_order_by_clauses order_by_sql_clauses
+        @sql ||= join_order_by_clauses order_by_sql_clauses
       end
 
       # @return [String]
       def build_reverse
-        join_order_by_clauses order_by_reverse_sql_clauses
+        @reverse_sql ||= join_order_by_clauses order_by_reverse_sql_clauses
       end
 
       protected
 
       # @return [Array<String>]
       def order_by_sql_clauses
-        space.conditions.map { |cond| condition_clause cond }
+        @conditions.map { |cond| condition_clause cond }
       end
 
       def condition_clause(cond)
         dir_sql = sort_direction_sql cond.order
-        col_sql = cond.sql.column_name
+        col_sql = cond.column_name
         if cond.order_enum
-          cond.order_enum.map { |v| "#{col_sql}=#{cond.sql.quote v} #{dir_sql}" }.join(', ').freeze
+          cond.order_enum.map { |v| "#{col_sql}=#{cond.quote v} #{dir_sql}" }.join(', ').freeze
         else
           "#{col_sql} #{dir_sql}".freeze
         end

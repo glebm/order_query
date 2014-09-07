@@ -7,7 +7,8 @@ module OrderQuery
 
       # @param [OrderQuery::Point] point
       def initialize(point)
-        @point = point
+        @point      = point
+        @conditions = point.space.conditions
       end
 
       # Join condition pairs with OR, and nest within each other with AND
@@ -20,7 +21,7 @@ module OrderQuery
       #       ... ))
       def build(side)
         # generate pairs of terms such as sales < 5, sales = 5
-        parts = point.space.conditions.map { |cond|
+        parts = @conditions.map { |cond|
           [where_side(cond, side, true), where_tie(cond)].reject { |x| x == WHERE_IDENTITY }
         }
         # group pairwise with OR, and nest with AND
@@ -66,7 +67,7 @@ module OrderQuery
         top_pair_idx = pairs.index(&:present?)
         if top_pair_idx &&
             (top_pair = pairs[top_pair_idx]).length == 2 &&
-            top_pair.first != (redundant_cond = where_side(point.space.conditions[top_pair_idx], side, false))
+            top_pair.first != (redundant_cond = where_side(@conditions[top_pair_idx], side, false))
           join_terms 'AND'.freeze, redundant_cond, wrap_term_with_parens(query)
         else
           query
@@ -104,19 +105,19 @@ module OrderQuery
           when 1
             where_eq cond, values[0]
           else
-            ["#{cond.sql.column_name} IN (?)".freeze, [values]]
+            ["#{cond.column_name} IN (?)".freeze, [values]]
         end
       end
 
       def where_eq(cond, value = point.value(cond))
-        [%Q(#{cond.sql.column_name} = ?).freeze, [value]]
+        [%Q(#{cond.column_name} = ?).freeze, [value]]
       end
 
       def where_ray(cond, from, mode, strict = true)
         ops = %w(< >)
         ops = ops.reverse if mode == :after
         op  = {asc: ops[0], desc: ops[1]}[cond.order || :asc]
-        ["#{cond.sql.column_name} #{op}#{'=' unless strict} ?".freeze, [from]]
+        ["#{cond.column_name} #{op}#{'=' unless strict} ?".freeze, [from]]
       end
 
       WHERE_IDENTITY = [''.freeze, [].freeze].freeze

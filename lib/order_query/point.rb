@@ -5,7 +5,7 @@ module OrderQuery
   # Search around a record in an order space
   class Point
     attr_reader :record, :space
-    delegate :scope, :reverse_scope, to: :space
+    delegate :first, :last, :count, to: :space
 
     # @param [ActiveRecord::Base] record
     # @param [OrderQuery::Space] space
@@ -13,26 +13,6 @@ module OrderQuery
       @record    = record
       @space     = space
       @where_sql = SQL::Where.new(self)
-    end
-
-    # @return [ActiveRecord::Base]
-    def first
-      scope.first
-    end
-
-    # @return [ActiveRecord::Base]
-    def last
-      reverse_scope.first
-    end
-
-    # @return [Integer]
-    def count
-      @total ||= scope.count
-    end
-
-    # @return [Integer]
-    def position
-      count - after.count
     end
 
     # @params [true, false] loop if true, consider last and first as adjacent (unless they are equal)
@@ -44,6 +24,11 @@ module OrderQuery
     # @return [ActiveRecord::Base]
     def previous(loop = true)
       unless_record_eq before.first || (last if loop)
+    end
+
+    # @return [Integer]
+    def position
+      space.count - after.count
     end
 
     # @return [ActiveRecord::Relation]
@@ -63,7 +48,7 @@ module OrderQuery
       scope = if side == :after
                 space.scope
               else
-                space.reverse_scope
+                space.scope_reverse
               end
       if query.present?
         scope.where(query, *query_args)
@@ -74,6 +59,10 @@ module OrderQuery
 
     def value(cond)
       record.send(cond.name)
+    end
+
+    def inspect
+      "#<OrderQuery::Point @record=#{@record.inspect} @space=#{@space.inspect}>"
     end
 
     protected

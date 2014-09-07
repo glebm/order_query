@@ -6,20 +6,28 @@ require 'order_query/point'
 module OrderQuery
   extend ActiveSupport::Concern
 
-  # @param [ActiveRecord::Relation] scope
-  # @param [Array<Array<Symbol,String>>] order_spec
-  def order_by(scope = nil, order_spec)
+  # @param [ActiveRecord::Relation] scope optional first argument (default: self.class.all)
+  # @param [Array<Array<Symbol,String>>, OrderQuery::Spec] order_spec
+  # @return [OrderQuery::Point]
+  # @example
+  #   users = User.active
+  #   user  = users.find(42)
+  #   next_user = user.seek(users, [:activated_at, :desc], [:id, :desc]).next
+  def seek(*spec)
+    fst = spec.first
+    if fst.nil? || fst.is_a?(ActiveRecord::Relation) || fst.is_a?(ActiveRecord::Base)
+      scope = spec.shift
+    end
     scope ||= self.class.all
-    Point.new(self, Space.new(scope, order_spec))
+    scope.seek(*spec).at(self)
   end
 
   module ClassMethods
-    def order_by(order_spec)
-      Space.new(self, order_spec).scope
-    end
-
-    def reverse_order_by(order_spec)
-      Space.new(self, order_spec).reverse_scope
+    # @return [OrderQuery::Space]
+    def seek(*spec)
+      # allow passing without a splat, as we can easily distinguish
+      spec = spec.first if spec.length == 1 && spec.first.first.is_a?(Array)
+      Space.new(all, spec)
     end
 
     #= DSL
@@ -27,18 +35,46 @@ module OrderQuery
     # @param [Symbol] name
     # @param [Array<Array<Symbol,String>>] order_spec
     # @example
-    #   class Issue
-    #     order_query :order_display, [[:created_at, :desc], [:id, :desc]]
+    #   class Post < ActiveRecord::Base
+    #     include OrderQuery
+    #     order_query :order_home,
+    #                [:pinned, [true, false]]
+    #                [:published_at, :desc],
+    #                [:id, :desc]
     #   end
     #
-    #   Issue.order_display #=> <ActiveRecord::Relation#...>
-    #   Issue.active.find(31).display_order(Issue.active).next  #=> <Issue#...>
-    def order_query(name, order_spec)
-      scope name, -> { order_by(order_spec) }
-      scope :"reverse_#{name}", -> { reverse_order_by(order_spec) }
-      define_method name do |scope = nil|
-        order_by scope, order_spec
-      end
+    #== Scopes
+    #   .order_home
+    #     #<ActiveRecord::Relation...>
+    #   .order_home_reverse
+    #     #<ActiveRecord::Relation...>
+    #
+    #== Class methods
+    #   .order_home_at(post)
+    #     #<OrderQuery::Point...>
+    #   .order_home_space
+    #     #<OrderQuery::Space...>
+    #
+    #== Instance methods
+    #   .order_home(scope)
+    #     #<OrderQuery::Point...>
+    def order_query(name, *spec)
+      space_method = :"#{name}_space"
+      define_singleton_method space_method, -> {
+        seek(*spec)
+      }
+      scope name, -> {
+        send(space_method).scope
+      }
+      scope :"#{name}_reverse", -> {
+        send(space_method).scope_reverse
+      }
+      define_singleton_method "#{name}_at", -> (record) {
+        send(space_method).at(record)
+      }
+      define_method(name) { |scope = nil|
+        (scope || self.class).send(space_method).at(self)
+      }
     end
   end
 

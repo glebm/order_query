@@ -1,41 +1,38 @@
 # order_query [![Build Status][travis-badge]][travis] [![Code Climate][codeclimate-badge]][codeclimate] [![Coverage Status][coveralls-badge]][coveralls]
 
-order_query gives you next or previous records relative to the current one efficiently.
-
-For example, you have a list of items, sorted by priority. You have 10,000 items!
-If you are showing the user a single item, how do you provide buttons for the user to see the previous item or the next item?
-
-You could pass the item's position to the item page and use `OFFSET` in your SQL query.
-The downside of this, apart from having to pass a number that may change, is that the database cannot jump to the offset; it has to read every record until it reaches, say, the 9001st record.
-This is slow. Here is where `order_query` comes in!
-
-`order_query` uses the same `ORDER BY` query, but also includes a `WHERE` clause that excludes records before (for next) or after (for prev) the current one.
+This gem gives you next or previous records relative to the current one efficiently. It is also useful for implementing infinite scroll.
+It uses [keyset pagination](http://use-the-index-luke.com/no-offset) to achieve this. [![no offset banner](http://use-the-index-luke.com/img/no-offset.q200.png)](http://use-the-index-luke.com/no-offset)
 
 ## Installation
 
 Add to Gemfile:
 
 ```ruby
-gem 'order_query', '~> 0.2.1'
+gem 'order_query', '~> 0.3.0'
 ```
 
 ## Usage
 
-Define a list of order conditions with `order_query`:
+Define named order conditions with `order_query`:
 
 ```ruby
 class Post < ActiveRecord::Base
   include OrderQuery
-  order_query :order_for_index, [
+  order_query :order_home,
     [:pinned, [true, false]],
     [:published_at, :desc],
     [:id, :desc]
-  ]
 end
 ```
 
-An order condition is specified as an attribute name, optionally an ordered list of values, and a sort direction.
-Additional options are:
+Order query accepts a list of order conditions as varargs or one array.
+Each condition is specified as an attribute name, an (optional) ordered list of values, and sort direction:
+
+```ruby
+[<attribute>, (attribute values in order), (:asc or :desc), (options hash)]
+```
+
+Available options:
 
 | option     | description                                                                |
 |------------|----------------------------------------------------------------------------|
@@ -43,38 +40,73 @@ Additional options are:
 | complete   | Enum attribute contains all the possible values. Default: `true`.          |
 | sql        | Customize attribute value SQL                                              |
 
-### Order scopes
 
-Order scopes are defined by `order_query`:
+### Scopes for `ORDER BY`
 
 ```ruby
-Post.order_for_index         #=> ActiveRecord::Relation<...>
-Post.reverse_order_for_index #=> ActiveRecord::Relation<...>
+Post.published.order_home         #=> #<ActiveRecord::Relation>
+Post.published.order_home_reverse #=> #<ActiveRecord::Relation>
 ```
 
-### Before, after, previous, and next
-
-An method is added by `order_query` to query around a record:
+### Seek relative to a record:
 
 ```ruby
-# get the order object, scope default: Post.all
-p = Post.find(31).order_for_index(scope) #=> OrderQuery::RelativeOrder<...>
-p.before         #=> ActiveRecord::Relation<...>
-p.previous       #=> Post<...>
-# pass true to #next and #previous in order to loop onto the the first / last record
-# will not loop onto itself
-p.previous(true) #=> Post<...>
+p = Post.published.order_home_at(Post.find(31)) #=> #<OrderQuery::Point>
+```
+
+An `OrderQuery::Point` exposes these finder methods:
+
+```ruby
+p.before     #=> #<ActiveRecord::Relation>
+p.after      #=> #<ActiveRecord::Relation>
+p.previous   #=> #<Post>
+p.next       #=> #<Post>
 p.position   #=> 5
-p.next       #=> Post<...>
-p.after      #=> ActiveRecord::Relation<...>
 ```
 
-#### Order conditions, advanced example
+Looping to the first and last record is enabled by default for `#next` and `#previous` respectively.
+Pass `false` to disable looping.
 
 ```ruby
-class Issue < ActiveRecord::Base
+point = Post.published.order_home_at(Post.published.order_home.last)
+point.previous        #=> #<Post>
+point.previous(false) #=> nil
+```
+
+This will still return `nil` if there is only one record.
+
+### Dynamic conditions
+
+To query with dynamic order conditions use `Model.seek(*spec)` class method:
+
+```ruby
+space = Post.visible.seek([:id, :desc]) #=> #<OrderQuery::Space>
+```
+
+This returns an `OrderQuery::Space` that exposes these methods:
+
+```ruby
+space.scope           #=> #<ActiveRecord::Relation>
+space.scope_reverse   #=> #<ActiveRecord::Relation>
+space.first           #=> scope.first
+space.last            #=> scope_reverse.first
+space.at(Post.first)  #=> #<OrderQuery::Point>
+```
+
+Alternatively, get an `OrderQuery::Point` using `Model#seek(scope, *spec)` instance method:
+
+```ruby
+Post.find(42).seek(Post.visible, [:id, :desc]) #=> #<OrderQuery::Point>
+# scope defaults to Post.all
+Post.find(42).seek([:id, :desc]) #=> #<OrderQuery::Point>
+```
+
+#### Advanced options example
+
+```ruby
+class Post < ActiveRecord::Base
   include OrderQuery
-  order_query :order_display, [
+  order_query :order_home, [
     # Pass an array for attribute order, and an optional sort direction for the array,
     # default is *:desc*, so that first in the array <=> first in the result
     [:priority, %w(high medium low), :desc],
@@ -92,41 +124,9 @@ class Issue < ActiveRecord::Base
 end
 ```
 
-### Dynamic order conditions
-
-To query with dynamic order conditions use `Model.order_by` and `Model#order_by`:
-
-```ruby
-Issue.order_by([[:id, :desc]])         #=> ActiveRecord::Relation<...>
-Issue.visible.reverse_order_by([[:id, :desc]]) #=> ActiveRecord::Relation<...>
-Issue.find(31).order_by([[:id, :desc]]).next #=> Issue<...>
-Issue.find(31).order_by(Issue.visible, [[:id, :desc]]).next #=> Issue<...>
-```
-
-For example, consider ordering by a list of ids returned from an elasticsearch query:
-
-```ruby
-ids = Issue.keyword_search('ruby') #=> [7, 3, 5]
-Issue.where(id: ids).order_by([[:id, ids]]).first(2).to_a #=> [Issue<id=7>, Issue<id=3>]
-```
-
 ## How it works
 
 Internally this gem builds a query that depends on the current record's order values and looks like:
-
-```sql
-SELECT ... WHERE
-x0 OR
-y0 AND (x1 OR
-        y1 AND (x2 OR
-                y2 AND ...))
-ORDER BY ...
-LIMIT 1
-```
-
-Where `x` correspond to `>` / `<` terms, and `y` to `=` terms (for resolving ties), per order criterion.
-
-A query may then look like this:
 
 ```sql
 -- Current post: pinned=true published_at='2014-03-21 15:01:35.064096' id=9
@@ -142,31 +142,11 @@ ORDER BY
 LIMIT 1
 ```
 
-A query for the advanced example would look like this:
-
-```sql
--- Current issue: priority='high' (votes - suspicious_votes)=4 updated_at='2014-03-19 10:23:18.671039' id=9
-SELECT  "issues".* FROM "issues"  WHERE
-  ("issues"."priority" IN ('medium','low') OR
-   "issues"."priority" = 'high' AND (
-       (votes - suspicious_votes) < 4 OR
-       (votes - suspicious_votes) = 4 AND (
-           "issues"."updated_at" < '2014-03-19 10:23:18.671039' OR
-           "issues"."updated_at" = '2014-03-19 10:23:18.671039' AND
-               "issues"."id" < 9)))
-ORDER BY
-  "issues"."priority"='high' DESC,
-  "issues"."priority"='medium' DESC,
-  "issues"."priority"='low' DESC,
-  (votes - suspicious_votes) DESC,
-  "issues"."updated_at" DESC,
-  "issues"."id" DESC
-LIMIT 1
-```
-
 The actual query is a bit different because `order_query` wraps the top-level `OR` with a (redundant) non-strict condition `x0' AND (x0 OR ...)`
 for [performance reasons](https://github.com/glebm/order_query/issues/3).
 This can be disabled with `OrderQuery.wrap_top_level_or = false`.
+
+See the implementation in [sql/where.rb](/lib/order_query/sql/where.rb).
 
 See how this affects query planning in Markus Winand's slides on [Pagination done the Right Way](http://use-the-index-luke.com/blog/2013-07/pagination-done-the-postgresql-way).
 
