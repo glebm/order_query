@@ -1,7 +1,11 @@
 # order_query [![Build Status][travis-badge]][travis] [![Code Climate][codeclimate-badge]][codeclimate] [![Coverage Status][coveralls-badge]][coveralls]
 
+<a href="http://use-the-index-luke.com/no-offset">
+  <img src="http://use-the-index-luke.com/img/no-offset.q200.png" alt="Do not use offset" align="right">
+</a>
+
 This gem gives you next or previous records relative to the current one efficiently. It is also useful for implementing infinite scroll.
-It uses [keyset pagination](http://use-the-index-luke.com/no-offset) to achieve this. [![no offset banner](http://use-the-index-luke.com/img/no-offset.q200.png)](http://use-the-index-luke.com/no-offset)
+It uses [keyset pagination](http://use-the-index-luke.com/no-offset) to achieve this.
 
 ## Installation
 
