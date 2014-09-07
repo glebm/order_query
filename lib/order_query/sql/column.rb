@@ -1,20 +1,20 @@
 module OrderQuery
   module SQL
-    class Condition
-      attr_reader :condition, :scope
+    class Column
+      attr_reader :column, :scope
 
-      def initialize(condition, scope)
-        @condition = condition
+      def initialize(column, scope)
+        @column = column
         @scope = scope
       end
 
       def column_name
         @column_name ||= begin
-          sql = condition.options[:sql]
+          sql = column.options[:sql]
           if sql
             sql.respond_to?(:call) ? sql.call : sql
           else
-            connection.quote_table_name(scope.table_name) + '.' + connection.quote_column_name(condition.name)
+            connection.quote_table_name(scope.table_name) + '.' + connection.quote_column_name(column.name)
           end
         end
       end

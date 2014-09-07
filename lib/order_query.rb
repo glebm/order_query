@@ -81,6 +81,6 @@ module OrderQuery
   class << self
     attr_accessor :wrap_top_level_or
   end
-  # Wrap top-level or with an AND and a redundant condition for performance
+  # Wrap top-level or with an AND and a redundant column for performance
   self.wrap_top_level_or = true
 end

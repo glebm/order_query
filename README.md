@@ -17,7 +17,7 @@ gem 'order_query', '~> 0.3.0'
 
 ## Usage
 
-Define named order conditions with `order_query`:
+Define named order columns with `order_query`:
 
 ```ruby
 class Post < ActiveRecord::Base
@@ -29,7 +29,7 @@ class Post < ActiveRecord::Base
 end
 ```
 
-Order query accepts a list of order conditions as varargs or one array, each one specified as:
+Order query accepts a list of order columns as varargs or one array, each one specified as:
 
 ```ruby
 [<attribute name>, (attribute values in order), (:asc or :desc), (options hash)]
@@ -40,7 +40,6 @@ Available options:
 | option     | description                                                                |
 |------------|----------------------------------------------------------------------------|
 | unique     | Unique attribute. Default: `true` for primary key, `false` otherwise.      |
-| complete   | Specified attribute values are the only possible values. Default: `true`.  |
 | sql        | Customize attribute value SQL                                              |
 
 
@@ -87,9 +86,9 @@ post  = posts.find(42)
 post.order_home(posts) #=> #<OrderQuery::Point>
 ```
 
-### Dynamic conditions
+### Dynamic columns
 
-Query with dynamic order conditions using the `seek(*spec)` class method:
+Query with dynamic order columns using the `seek(*spec)` class method:
 
 ```ruby
 space = Post.visible.seek([:id, :desc]) #=> #<OrderQuery::Space>
@@ -124,7 +123,7 @@ class Post < ActiveRecord::Base
     [:priority, %w(high medium low)],
     # A method and custom SQL can be used instead of an attribute
     [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
-    # Default sort order for non-array conditions is :asc, just like SQL
+    # Default sort order for non-array columns is :asc, just like SQL
     [:updated_at, :desc],
     # pass unique: true for unique attributes to get more optimized queries
     # unique is true by default for primary_key
@@ -153,7 +152,7 @@ ORDER BY
 LIMIT 1
 ```
 
-The actual query is a bit different because `order_query` wraps the top-level `OR` with a (redundant) non-strict condition `x0' AND (x0 OR ...)`
+The actual query is a bit different because `order_query` wraps the top-level `OR` with a (redundant) non-strict column `x0' AND (x0 OR ...)`
 for [performance reasons](https://github.com/glebm/order_query/issues/3).
 This can be disabled with `OrderQuery.wrap_top_level_or = false`.
 

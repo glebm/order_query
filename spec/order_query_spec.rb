@@ -9,7 +9,7 @@ end
 class Post < ActiveRecord::Base
   include OrderQuery
   order_query :order_list,
-              [:pinned, [true, false], complete: true],
+              [:pinned, [true, false]],
               [:published_at, :desc],
               [:id, :desc]
 end
@@ -21,7 +21,8 @@ end
 # Advanced model
 class Issue < ActiveRecord::Base
   DISPLAY_ORDER = [
-      [:priority, %w(high medium low), complete: true],
+      [:pinned, [true, false]],
+      [:priority, %w(high medium low)],
       [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
       [:updated_at, :desc],
       [:id, :desc]
@@ -63,9 +64,11 @@ describe 'OrderQuery' do
         t        = Time.now
         datasets = [
             [
+                ['high', 5, 0, t, true],
+                ['high', 5, 1, t, true],
                 ['high', 5, 0, t],
+                ['high', 5, 0, t - 1.day],
                 ['high', 5, 1, t],
-                ['high', 5, 1, t - 1.day],
                 ['medium', 10, 0, t],
                 ['medium', 10, 5, t - 12.hours],
                 ['low', 30, 0, t + 1.day]
@@ -85,7 +88,7 @@ describe 'OrderQuery' do
         datasets.each_with_index do |ds, i|
           it "is ordered correctly (test data #{i})" do
             issues = ds.map do |attr|
-              Issue.new(priority: attr[0], votes: attr[1], suspicious_votes: attr[2], updated_at: attr[3])
+              Issue.new(priority: attr[0], votes: attr[1], suspicious_votes: attr[2], updated_at: attr[3], pinned: attr[4] || false)
             end
             issues.shuffle.reverse_each(&:save!)
             expect(Issue.display_order.to_a).to eq(issues)
@@ -161,7 +164,7 @@ describe 'OrderQuery' do
           end
         end
 
-        it '#seek falls back to scope when order condition is missing self' do
+        it '#seek falls back to scope when order column is missing self' do
           a = create_issue(priority: 'medium')
           b = create_issue(priority: 'high')
           expect(a.seek(Issue.display_order, [[:priority, ['wontfix', 'askbob']], [:id, :desc]]).next).to eq(b)
@@ -176,6 +179,7 @@ describe 'OrderQuery' do
             self.verbose = false
 
             create_table :issues do |t|
+              t.column :pinned, :boolean, null: false, default: false
               t.column :priority, :string
               t.column :votes, :integer
               t.column :suspicious_votes, :integer

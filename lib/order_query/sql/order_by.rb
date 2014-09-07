@@ -1,9 +1,9 @@
 module OrderQuery
   module SQL
     class OrderBy
-      # @param [Array<Condition>]
-      def initialize(conditions)
-        @conditions = conditions
+      # @param [Array<Column>]
+      def initialize(columns)
+        @columns = columns
       end
 
       # @return [String]
@@ -20,10 +20,10 @@ module OrderQuery
 
       # @return [Array<String>]
       def order_by_sql_clauses
-        @conditions.map { |cond| condition_clause cond }
+        @columns.map { |cond| column_clause cond }
       end
 
-      def condition_clause(cond)
+      def column_clause(cond)
         dir_sql = sort_direction_sql cond.order
         col_sql = cond.column_name
         if cond.order_enum

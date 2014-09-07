@@ -1,6 +1,6 @@
 ## 0.3.0
 
-* `order_query` now accepts conditions as varargs. Array form is still supported.
+* `order_query` now accepts columns as varargs. Array form is still supported.
 * `order_by` renamed to `seek`
 
 ## 0.2.1
