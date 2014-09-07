@@ -1,7 +1,7 @@
 # order_query [![Build Status][travis-badge]][travis] [![Code Climate][codeclimate-badge]][codeclimate] [![Coverage Status][coveralls-badge]][coveralls]
 
 <a href="http://use-the-index-luke.com/no-offset">
-  <img src="http://use-the-index-luke.com/img/no-offset.q200.png" alt="Do not use offset" align="right">
+  <img src="http://use-the-index-luke.com/img/no-offset.q200.png" alt="Do not use offset" align="right" width="129" height="129">
 </a>
 
 This gem gives you next or previous records relative to the current one efficiently. It is also useful for implementing infinite scroll.
