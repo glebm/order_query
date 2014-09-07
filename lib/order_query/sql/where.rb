@@ -7,7 +7,7 @@ module OrderQuery
 
       # @param [OrderQuery::Point] point
       def initialize(point)
-        @point      = point
+        @point   = point
         @columns = point.space.columns
       end
 
@@ -65,9 +65,8 @@ module OrderQuery
       # Read more at https://github.com/glebm/order_query/issues/3
       def wrap_top_level_or(query, terms, side)
         top_term_i = terms.index(&:present?)
-        if top_term_i && terms[top_term_i].length == 2 &&
-            (cond = where_side(@columns[top_term_i], side, false)) != WHERE_IDENTITY
-          join_terms 'AND'.freeze, cond, wrap_term_with_parens(query)
+        if top_term_i && terms[top_term_i].length == 2 && !(col = @columns[top_term_i]).order_enum
+          join_terms 'AND'.freeze, where_side(col, side, false), wrap_term_with_parens(query)
         else
           query
         end
