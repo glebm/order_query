@@ -12,7 +12,7 @@ It uses [keyset pagination](http://use-the-index-luke.com/no-offset) to achieve 
 Add to Gemfile:
 
 ```ruby
-gem 'order_query', '~> 0.3.0'
+gem 'order_query', '~> 0.3.1'
 ```
 
 ## Usage

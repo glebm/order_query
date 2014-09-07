@@ -1,3 +1,9 @@
+## 0.3.1
+
+* Automatically add primary key when there is no unique column for the order
+* Remove `complete` option
+* Fix Rubinius compatibility
+
 ## 0.3.0
 
 * `order_query` now accepts columns as varargs. Array form is still supported.
