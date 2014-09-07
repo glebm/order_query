@@ -1,7 +1,7 @@
 # order_query [![Build Status][travis-badge]][travis] [![Code Climate][codeclimate-badge]][codeclimate] [![Coverage Status][coveralls-badge]][coveralls]
 
 <a href="http://use-the-index-luke.com/no-offset">
-  <img src="http://use-the-index-luke.com/img/no-offset.q200.png" alt="Do not use offset" align="right" width="106" height="106">
+  <img src="http://use-the-index-luke.com/img/no-offset.q200.png" alt="100% offset-free" align="right" width="106" height="106">
 </a>
 
 This gem gives you next or previous records relative to the current one efficiently. It is also useful for implementing infinite scroll.
@@ -29,11 +29,10 @@ class Post < ActiveRecord::Base
 end
 ```
 
-Order query accepts a list of order conditions as varargs or one array.
-Each condition is specified as an attribute name, an (optional) ordered list of values, and sort direction:
+Order query accepts a list of order conditions as varargs or one array, each one specified as:
 
 ```ruby
-[<attribute>, (attribute values in order), (:asc or :desc), (options hash)]
+[<attribute name>, (attribute values in order), (:asc or :desc), (options hash)]
 ```
 
 Available options:
@@ -41,7 +40,7 @@ Available options:
 | option     | description                                                                |
 |------------|----------------------------------------------------------------------------|
 | unique     | Unique attribute. Default: `true` for primary key, `false` otherwise.      |
-| complete   | Enum attribute contains all the possible values. Default: `true`.          |
+| complete   | Specified attribute values are the only possible values. Default: `true`.  |
 | sql        | Customize attribute value SQL                                              |
 
 
@@ -52,13 +51,15 @@ Post.published.order_home         #=> #<ActiveRecord::Relation>
 Post.published.order_home_reverse #=> #<ActiveRecord::Relation>
 ```
 
-### Seek relative to a record:
+### Before / after, previous / next, position
+
+First, get an `OrderQuery::Point` for the record:
 
 ```ruby
 p = Post.published.order_home_at(Post.find(31)) #=> #<OrderQuery::Point>
 ```
 
-An `OrderQuery::Point` exposes these finder methods:
+It exposes these finder methods:
 
 ```ruby
 p.before     #=> #<ActiveRecord::Relation>
@@ -68,16 +69,23 @@ p.next       #=> #<Post>
 p.position   #=> 5
 ```
 
-Looping to the first and last record is enabled by default for `#next` and `#previous` respectively.
-Pass `false` to disable looping.
+Looping to the first / last record is enabled by default. Pass `false` to disable:
 
 ```ruby
-point = Post.published.order_home_at(Post.published.order_home.last)
+point = Post.order_home_at(Post.order_home.first)
 point.previous        #=> #<Post>
 point.previous(false) #=> nil
 ```
 
-This will still return `nil` if there is only one record.
+Even with looping, `nil` will be returned if there is only one record.
+
+You can also get an `OrderQuery::Point` from an instance and a scope:
+
+```ruby
+posts = Post.published
+post  = posts.find(42)
+post.order_home(posts) #=> #<OrderQuery::Point>
+```
 
 ### Dynamic conditions
 
