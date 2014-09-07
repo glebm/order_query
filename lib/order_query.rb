@@ -66,10 +66,10 @@ module OrderQuery
       scope name, -> {
         send(space_method).scope
       }
-      scope :"#{name}_reverse", -> {
+      scope "#{name}_reverse", -> {
         send(space_method).scope_reverse
       }
-      define_singleton_method "#{name}_at", -> (record) {
+      define_singleton_method "#{name}_at", ->(record) {
         send(space_method).at(record)
       }
       define_method(name) { |scope = nil|
