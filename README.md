@@ -4,7 +4,7 @@
   <img src="http://use-the-index-luke.com/img/no-offset.q200.png" alt="100% offset-free" align="right" width="106" height="106">
 </a>
 
-This gem gives you next or previous records relative to the current one efficiently. It is also useful for implementing infinite scroll.
+This gem finds the next or previous record(s) relative to the current one efficiently. It is also useful for implementing infinite scroll.
 It uses [keyset pagination](http://use-the-index-luke.com/no-offset) to achieve this.
 
 ## Installation
@@ -62,19 +62,19 @@ p = Post.published.order_home_at(Post.find(31)) #=> #<OrderQuery::Point>
 It exposes these finder methods:
 
 ```ruby
-p.before     #=> #<ActiveRecord::Relation>
-p.after      #=> #<ActiveRecord::Relation>
-p.previous   #=> #<Post>
-p.next       #=> #<Post>
-p.position   #=> 5
+p.before   #=> #<ActiveRecord::Relation>
+p.after    #=> #<ActiveRecord::Relation>
+p.previous #=> #<Post>
+p.next     #=> #<Post>
+p.position #=> 5
 ```
 
 Looping to the first / last record is enabled by default. Pass `false` to disable:
 
 ```ruby
-point = Post.order_home_at(Post.order_home.first)
-point.previous        #=> #<Post>
-point.previous(false) #=> nil
+p = Post.order_home_at(Post.order_home.first)
+p.previous        #=> #<Post>
+p.previous(false) #=> nil
 ```
 
 Even with looping, `nil` will be returned if there is only one record.
@@ -89,7 +89,7 @@ post.order_home(posts) #=> #<OrderQuery::Point>
 
 ### Dynamic conditions
 
-To query with dynamic order conditions use `Model.seek(*spec)` class method:
+Query with dynamic order conditions using the `seek(*spec)` class method:
 
 ```ruby
 space = Post.visible.seek([:id, :desc]) #=> #<OrderQuery::Space>
@@ -105,7 +105,7 @@ space.last            #=> scope_reverse.first
 space.at(Post.first)  #=> #<OrderQuery::Point>
 ```
 
-Alternatively, get an `OrderQuery::Point` using `Model#seek(scope, *spec)` instance method:
+Alternatively, get an `OrderQuery::Point` using the `seek(scope, *spec)` instance method:
 
 ```ruby
 Post.find(42).seek(Post.visible, [:id, :desc]) #=> #<OrderQuery::Point>
@@ -118,18 +118,17 @@ Post.find(42).seek([:id, :desc]) #=> #<OrderQuery::Point>
 ```ruby
 class Post < ActiveRecord::Base
   include OrderQuery
-  order_query :order_home, [
-    # Pass an array for attribute order, and an optional sort direction for the array,
-    # default is *:desc*, so that first in the array <=> first in the result
-    [:priority, %w(high medium low), :desc],
-    # Sort attribute can be a method name, provided you pass :sql for the attribute
+  order_query :order_home,
+    # For an array of order values, default direction is :desc
+    # High-priority issues will be ordered first in this example
+    [:priority, %w(high medium low)],
+    # A method and custom SQL can be used instead of an attribute
     [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
-    # Default sort order for non-array attributes is :asc, just like SQL
+    # Default sort order for non-array conditions is :asc, just like SQL
     [:updated_at, :desc],
     # pass unique: true for unique attributes to get more optimized queries
-    # default: true for primary_key, false otherwise
-    [:id, :desc, unique: true]
-  ]
+    # unique is true by default for primary_key
+    [:id, :desc]
   def valid_votes_count
     votes - suspicious_votes
   end
@@ -138,7 +137,7 @@ end
 
 ## How it works
 
-Internally this gem builds a query that depends on the current record's order values and looks like:
+Internally this gem builds a query that depends on the current record's values and looks like this:
 
 ```sql
 -- Current post: pinned=true published_at='2014-03-21 15:01:35.064096' id=9
