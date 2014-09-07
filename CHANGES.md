@@ -1,3 +1,8 @@
+## 0.3.0
+
+* `order_query` now accepts conditions as varargs. Array form is still supported.
+* `order_by` renamed to `seek`
+
 ## 0.2.1
 
 * `complete` now defaults to true for list attributes as well.

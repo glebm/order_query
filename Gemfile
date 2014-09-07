@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 gemspec
 
 group :test, :development do
-  gem 'coveralls', require: false
+  gem 'codeclimate-test-reporter', group: :test, require: nil
   gem 'byebug', platform: :mri_21, require: false
 end
 

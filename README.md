@@ -1,4 +1,4 @@
-# order_query [![Build Status][travis-badge]][travis] [![Code Climate][codeclimate-badge]][codeclimate] [![Coverage Status][coveralls-badge]][coveralls]
+# order_query [![Build Status][travis-badge]][travis] [![Code Climate][codeclimate-badge]][codeclimate] [![Coverage Status][coverage-badge]][coverage]
 
 <a href="http://use-the-index-luke.com/no-offset">
   <img src="http://use-the-index-luke.com/img/no-offset.q200.png" alt="100% offset-free" align="right" width="106" height="106">
@@ -51,7 +51,7 @@ Post.published.order_home         #=> #<ActiveRecord::Relation>
 Post.published.order_home_reverse #=> #<ActiveRecord::Relation>
 ```
 
-### Before / after, previous / next, position
+### Before / after, previous / next, and position
 
 First, get an `OrderQuery::Point` for the record:
 
@@ -169,5 +169,5 @@ This project uses MIT license.
 [gemnasium]: https://gemnasium.com/glebm/order_query
 [codeclimate]: https://codeclimate.com/github/glebm/order_query
 [codeclimate-badge]: http://img.shields.io/codeclimate/github/glebm/order_query.svg
-[coveralls]: https://coveralls.io/r/glebm/order_query
-[coveralls-badge]: http://img.shields.io/coveralls/glebm/order_query.svg
+[coverage]: https://codeclimate.com/github/glebm/order_query
+[coverage-badge]: https://codeclimate.com/github/glebm/order_query/badges/coverage.svg
