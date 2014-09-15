@@ -26,7 +26,7 @@ module OrderQuery
       unless_record_eq before.first || (last if loop)
     end
 
-    # @return [Integer]
+    # @return [Integer] counting from 1
     def position
       space.count - after.count
     end

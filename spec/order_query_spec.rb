@@ -92,14 +92,13 @@ describe 'OrderQuery' do
             end
             issues.shuffle.reverse_each(&:save!)
             expect(Issue.display_order.to_a).to eq(issues)
-            issues.each_slice(2) do |prev, cur|
-              cur ||= issues.first
-              expect(prev.display_order.next).to eq(cur)
-              expect(cur.display_order.previous).to eq(prev)
+            issues.zip(issues.rotate).each_with_index do |(cur, nxt), i|
+              expect(cur.display_order.position).to eq(i + 1)
+              expect(cur.display_order.next).to eq(nxt)
               expect(cur.display_order.space.count).to eq(Issue.count)
-              expect(cur.display_order.before.count + 1 + cur.display_order.after.count).to eq(cur.display_order.count)
-
-              expect(cur.display_order.before.to_a.reverse + [cur] + cur.display_order.after.to_a).to eq(Issue.display_order.to_a)
+              expect(cur.display_order.before.count + 1 + cur.display_order.after.count).to eq(nxt.display_order.count)
+              expect(nxt.display_order.previous).to eq(cur)
+              expect(nxt.display_order.before.to_a.reverse + [nxt] + nxt.display_order.after.to_a).to eq(Issue.display_order.to_a)
             end
           end
         end
