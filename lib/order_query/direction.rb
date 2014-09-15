@@ -3,8 +3,7 @@ module OrderQuery
   module Direction
     extend self
 
-    DIRECTIONS   = [:asc, :desc].freeze
-    DIRECTIONS_S = DIRECTIONS.map { |d| d.to_s.freeze }.freeze
+    DIRECTIONS = [:asc, :desc].freeze
 
     def all
       DIRECTIONS
@@ -20,11 +19,8 @@ module OrderQuery
     # @raise [ArgumentError]
     # @return [:asc, :desc]
     def parse!(direction)
-      if direction.is_a?(Symbol)
-        direction if DIRECTIONS.include?(direction)
-      else
-        direction = direction.to_s.downcase
-        direction.to_sym if DIRECTIONS_S.include?(direction)
+      if all.include?(direction)
+        direction
       end or
           raise ArgumentError.new("sort direction must be in #{all.map(&:inspect).join(', ')}, is #{direction.inspect}")
     end
