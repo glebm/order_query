@@ -1,29 +1,32 @@
 # coding: utf-8
+require 'order_query/direction'
 require 'order_query/sql/column'
 module OrderQuery
   # An order column (sort column)
   class Column
-    attr_reader :name, :order, :order_enum, :options
+    attr_reader :name, :order_enum, :options
     delegate :column_name, :quote, to: :@sql
 
     # @option spec [String] :unique    Mark the attribute as unique to avoid redundant columns
     def initialize(spec, scope)
-      spec    = spec.dup
-      options = spec.extract_options!
-      @name   = spec[0]
-      case spec[1]
-        when Array
-          @order_enum = spec[1]
-          @order      = spec[2] || :desc
-        else
-          @order = spec[1] || :asc
+      spec       = spec.dup
+      options    = spec.extract_options!
+      @name      = spec[0]
+      if spec[1].is_a?(Array)
+        @order_enum = spec.delete_at(1)
+        spec[1] ||= :desc
       end
-      @options  = options.reverse_merge(
+      @direction = Direction.parse!(spec[1] || :asc)
+      @options   = options.reverse_merge(
           unique:   name.to_s == scope.primary_key,
           complete: true
       )
-      @unique   = @options[:unique]
-      @sql      = SQL::Column.new(self, scope)
+      @unique    = @options[:unique]
+      @sql       = SQL::Column.new(self, scope)
+    end
+
+    def direction(reverse = false)
+      reverse ? Direction.reverse(@direction) : @direction
     end
 
     def unique?
@@ -40,7 +43,7 @@ module OrderQuery
       ord = order_enum
       pos = ord.index(value)
       if pos
-        dir = order
+        dir = direction
         if side == :after && dir == :desc || side == :before && dir == :asc
           ord.from pos + (strict ? 1 : 0)
         else

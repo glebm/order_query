@@ -57,7 +57,7 @@ end
 describe 'OrderQuery' do
 
   [false, true].each do |wrap_top_level_or|
-    context "(wrap_top_level_or: #{wrap_top_level_or})" do
+    context "(wtlo: #{wrap_top_level_or})" do
       wrap_top_level_or wrap_top_level_or
 
       context 'Issue test model' do
@@ -208,6 +208,42 @@ describe 'OrderQuery' do
           expect(o1.next(false)).to eq(p2)
           expect(o2.next(false)).to be_nil
           expect(o2.next(true)).to eq(p1)
+        end
+
+        context 'boolean enum order' do
+          before do
+            create_post pinned: true
+            create_post pinned: false
+          end
+          after do
+            Post.delete_all
+          end
+          it 'ORDER BY is collapsed' do
+            expect(Post.seek([:pinned, [true, false]]).scope.to_sql).to include('ORDER BY "posts"."pinned" DESC')
+          end
+          it 'enum asc' do
+            expect(Post.seek([:pinned, [false, true], :asc]).scope.pluck(:pinned)).to eq([true, false])
+            expect(Post.seek([:pinned, [true, false], :asc]).scope.pluck(:pinned)).to eq([false, true])
+          end
+          it 'enum desc' do
+            expect(Post.seek([:pinned, [false, true], :desc]).scope.pluck(:pinned)).to eq([false, true])
+            expect(Post.seek([:pinned, [true, false], :desc]).scope.pluck(:pinned)).to eq([true, false])
+          end
+        end
+
+        xcontext 'nil in enum' do
+          states = [nil, false, true]
+          let!(:posts) { states.map { |state| create_post(pinned: state) } }
+          states.permutation do |p|
+            # There is no cross-DB SQL that can be generated to position nil results
+            # http://use-the-index-luke.com/sql/sorting-grouping/order-by-asc-desc-nulls-last
+            next unless p.first.nil? || p.last.nil?
+            # Positioning NULLs first or last can be achieved, but remains on the ToDo / contributions welcome list
+            it "nil in enum works for #{p}" do
+              expect(Post.seek([:pinned, p]).scope.all.map(&:pinned)).to eq(p)
+              expect(Post.seek([:pinned, p, :asc]).scope.all.map(&:pinned)).to eq(p.reverse)
+            end
+          end
         end
 
         before do

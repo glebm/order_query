@@ -1,3 +1,8 @@
+## 0.3.2
+
+* Optimization: do not wrap top-level disjunctive in `AND` when the column has an enumerated order. [Read more](https://github.com/glebm/order_query/issues/3#issuecomment-54764638).
+* Boolean enum columns (e.g. `[:pinned, [true, false]]`) are now automatically collapsed to `ORDER by column ASC|DESC`.
+
 ## 0.3.1
 
 * Automatically add primary key when there is no unique column for the order

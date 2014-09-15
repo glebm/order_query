@@ -106,11 +106,9 @@ module OrderQuery
         [%Q(#{col.column_name} = ?).freeze, [value]]
       end
 
+      RAY_OP = {asc: '>'.freeze, desc: '<'.freeze}.freeze
       def where_ray(col, from, mode, strict = true)
-        ops = %w(< >)
-        ops = ops.reverse if mode == :after
-        op  = {asc: ops[0], desc: ops[1]}[col.order || :asc]
-        ["#{col.column_name} #{op}#{'=' unless strict} ?".freeze, [from]]
+        ["#{col.column_name} #{RAY_OP[col.direction(mode == :before)]}#{'=' unless strict} ?".freeze, [from]]
       end
 
       WHERE_IDENTITY = [''.freeze, [].freeze].freeze
