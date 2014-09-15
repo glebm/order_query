@@ -17,31 +17,30 @@ gem 'order_query', '~> 0.3.2'
 
 ## Usage
 
-Define named order columns with `order_query`:
+Define a named list of attributes to order by with `order_query(name, *order)`:
 
 ```ruby
 class Post < ActiveRecord::Base
   include OrderQuery
   order_query :order_home,
     [:pinned, [true, false]],
-    [:published_at, :desc],
-    [:id, :desc]
+    [:published_at, :desc]
 end
 ```
 
-Order query accepts a list of order columns as varargs or one array, each one specified as:
+Each attributes is specified as:
 
-```ruby
-[<attribute name>, (attribute values in order), (:asc or :desc), (options hash)]
-```
-
-Available options:
+1. Attribute name.
+2. Optionally, values to order by, such as `%w(high medium low)` or `[true, false]`.
+3. Sort direction, `:asc` or `:desc`. Default: `:asc`; `:desc` when values to order by are specified.
+4. Options:
 
 | option     | description                                                                |
 |------------|----------------------------------------------------------------------------|
 | unique     | Unique attribute. Default: `true` for primary key, `false` otherwise.      |
-| sql        | Customize attribute value SQL                                              |
+| sql        | Customize column SQL.                                                      |
 
+If no unique column is specified, `[primary_key, :desc]` is used. Unique column must be the last one.
 
 ### Scopes for `ORDER BY`
 
@@ -68,7 +67,7 @@ p.next     #=> #<Post>
 p.position #=> 5
 ```
 
-Looping to the first / last record is enabled by default. Pass `false` to disable:
+Looping to the first / last record is enabled for `next` / `previous` by default. Pass `false` to disable:
 
 ```ruby
 p = Post.order_home_at(Post.order_home.first)
@@ -88,7 +87,7 @@ post.order_home(posts) #=> #<OrderQuery::Point>
 
 ### Dynamic columns
 
-Query with dynamic order columns using the `seek(*spec)` class method:
+Query with dynamic order columns using the `seek(*order)` class method:
 
 ```ruby
 space = Post.visible.seek([:id, :desc]) #=> #<OrderQuery::Space>
@@ -104,7 +103,7 @@ space.last            #=> scope_reverse.first
 space.at(Post.first)  #=> #<OrderQuery::Point>
 ```
 
-Alternatively, get an `OrderQuery::Point` using the `seek(scope, *spec)` instance method:
+Alternatively, get an `OrderQuery::Point` using the `seek(scope, *order)` instance method:
 
 ```ruby
 Post.find(42).seek(Post.visible, [:id, :desc]) #=> #<OrderQuery::Point>
@@ -112,7 +111,7 @@ Post.find(42).seek(Post.visible, [:id, :desc]) #=> #<OrderQuery::Point>
 Post.find(42).seek([:id, :desc]) #=> #<OrderQuery::Point>
 ```
 
-#### Advanced options example
+### Advanced example
 
 ```ruby
 class Post < ActiveRecord::Base
