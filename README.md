@@ -40,7 +40,7 @@ Each attributes is specified as:
 | unique     | Unique attribute. Default: `true` for primary key, `false` otherwise.      |
 | sql        | Customize column SQL.                                                      |
 
-If no unique column is specified, `[primary_key, :desc]` is used. Unique column must be the last one.
+If no unique column is specified, `[primary_key, :asc]` is used. Unique column must be last.
 
 ### Scopes for `ORDER BY`
 

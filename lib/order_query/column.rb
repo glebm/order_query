@@ -61,7 +61,7 @@ module OrderQuery
           (@order_enum.inspect if order_enum),
           ('unique' if @unique),
           (column_name if options[:sql]),
-          {desc: '▼', asc: '▲'}[@order]
+          @direction
       ].compact
       "(#{parts.join(' ')})"
     end

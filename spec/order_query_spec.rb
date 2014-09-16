@@ -209,6 +209,30 @@ describe 'OrderQuery' do
           expect(o2.next(true)).to eq(p1)
         end
 
+        context '#inspect' do
+          it 'Column' do
+            expect(OrderQuery::Column.new([:id, :desc], Post).inspect).to eq '(id unique desc)'
+            expect(OrderQuery::Column.new([:virtual, :desc, sql: 'SIN(id)'], Post).inspect).to eq '(virtual SIN(id) desc)'
+          end
+
+          let(:space) {
+            OrderQuery::Space.new(Post, [[:pinned, [true, false]]])
+          }
+
+          it 'Point' do
+            post  = create_post
+            point = OrderQuery::Point.new(post, space)
+            expect(point.inspect).to(
+                eq %Q(#<OrderQuery::Point @record=#<Post id: #{post.id}, pinned: false, published_at: #{post.published_at.to_s[0..-7].inspect}> @space=#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, pinned: boolean, published_at: datetime)>>)
+            )
+          end
+
+          it 'Space' do
+            expect(space.inspect).to eq '#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, pinned: boolean, published_at: datetime)>'
+          end
+        end
+
+
         context 'boolean enum order' do
           before do
             create_post pinned: true
