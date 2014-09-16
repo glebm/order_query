@@ -5,6 +5,7 @@ module OrderQuery
   class Space
     # @return [Array<OrderQuery::Column>]
     attr_reader :columns
+    delegate :count, :empty?, to: :@base_scope
 
     # @param [ActiveRecord::Relation] base_scope
     # @param [Array<Array<Symbol,String>>, OrderQuery::Spec] order_spec
@@ -43,8 +44,6 @@ module OrderQuery
     def last
       scope_reverse.first
     end
-
-    delegate :count, :empty?, to: :@base_scope
 
     def inspect
       "#<OrderQuery::Space @columns=#{@columns.inspect} @base_scope=#{@base_scope.inspect}>"

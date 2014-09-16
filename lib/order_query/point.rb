@@ -50,11 +50,7 @@ module OrderQuery
               else
                 space.scope_reverse
               end
-      if query.present?
-        scope.where(query, *query_args)
-      else
-        scope
-      end
+      scope.where(query, *query_args)
     end
 
     def value(cond)

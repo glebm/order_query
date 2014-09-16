@@ -92,9 +92,11 @@ describe 'OrderQuery' do
             end
             issues.shuffle.reverse_each(&:save!)
             expect(Issue.display_order.to_a).to eq(issues)
+            expect(Issue.display_order_reverse.to_a).to eq(issues.reverse)
             issues.zip(issues.rotate).each_with_index do |(cur, nxt), i|
               expect(cur.display_order.position).to eq(i + 1)
               expect(cur.display_order.next).to eq(nxt)
+              expect(Issue.display_order_at(cur).next).to eq nxt
               expect(cur.display_order.space.count).to eq(Issue.count)
               expect(cur.display_order.before.count + 1 + cur.display_order.after.count).to eq(nxt.display_order.count)
               expect(nxt.display_order.previous).to eq(cur)
@@ -121,8 +123,10 @@ describe 'OrderQuery' do
 
         it '.seek works on a list of ids' do
           ids = 3.times.map { create_issue.id }
-          expect(Issue.seek([[:id, ids]]).scope.count).to eq ids.length
-          expect(Issue.seek([:id, ids]).scope.count).to eq ids.length
+          expect(Issue.seek([[:id, ids]]).count).to eq ids.length
+          expect(Issue.seek([:id, ids]).count).to eq ids.length
+          expect(Issue.seek([:id, ids]).scope.pluck(:id)).to eq ids
+          expect(Issue.seek([:id, ids]).scope_reverse.pluck(:id)).to eq ids.reverse
         end
 
         context 'partitioned on a boolean flag' do
@@ -137,10 +141,12 @@ describe 'OrderQuery' do
           let!(:inactive) { Issue.where(active: false).seek(order) }
 
           it '.seek preserves scope' do
-            expect(inactive.scope.count).to eq 1
             expect(inactive.count).to eq 1
+            expect(inactive.scope.count).to eq 1
+            expect(inactive.scope_reverse.count).to eq 1
             expect(active.count).to eq 2
             expect(active.scope.count).to eq 2
+            expect(active.scope_reverse.count).to eq 2
           end
 
           it 'gives a valid result if at argument is outside of the space' do
