@@ -59,16 +59,12 @@ module OrderQuery
     #   .order_home(scope)
     #     #<OrderQuery::Point...>
     def order_query(name, *spec)
+      define_singleton_method(:"#{name}_space") { seek(*spec) }
       class_eval <<-RUBY, __FILE__, __LINE__
         scope :#{name}, -> { #{name}_space.scope }
         scope :#{name}_reverse, -> { #{name}_space.scope_reverse }
-        class << self
-          def #{name}_at(record)
-            #{name}_space.at(record)
-          end
-          def #{name}_space
-            seek(#{spec.map(&:inspect).join(', ')})
-          end
+        def self.#{name}_at(record)
+          #{name}_space.at(record)
         end
         def #{name}(scope = self.class)
           scope.#{name}_space.at(self)
