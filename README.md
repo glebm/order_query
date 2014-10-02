@@ -4,8 +4,7 @@
   <img src="http://use-the-index-luke.com/img/no-offset.q200.png" alt="100% offset-free" align="right" width="106" height="106">
 </a>
 
-This gem finds the next or previous record(s) relative to the current one efficiently. It is also useful for implementing infinite scroll.
-It uses [keyset pagination](http://use-the-index-luke.com/no-offset) to achieve this.
+This gem finds the next or previous record(s) relative to the current one efficiently using [keyset pagination](http://use-the-index-luke.com/no-offset), e.g. for navigation or infinite scroll.
 
 ## Installation
 
