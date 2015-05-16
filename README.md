@@ -102,6 +102,12 @@ space.last            #=> scope_reverse.first
 space.at(Post.first)  #=> #<OrderQuery::Point>
 ```
 
+`OrderQuery::Space` is also available for defined order_queries:
+
+```ruby
+Post.visible.order_home_space #=> #<OrderQuery::Space>
+```
+
 Alternatively, get an `OrderQuery::Point` using the `seek(scope, *order)` instance method:
 
 ```ruby
