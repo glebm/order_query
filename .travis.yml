@@ -4,6 +4,11 @@ rvm:
 - 2.0.0
 - jruby
 - rbx-2
+cache: bundler
+bundler_args: --path ../../vendor/bundle --without debug
+gemfile:
+ - spec/gemfiles/rails_4.gemfile
+ - spec/gemfiles/rails_5.gemfile
 env:
   global:
   - TRAVIS=1

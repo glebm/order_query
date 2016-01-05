@@ -18,8 +18,8 @@ Gem::Specification.new do |s|
     s.metadata = { 'issue_tracker' => 'https://github.com/glebm/order_query' }
   end
 
-  s.add_dependency 'activerecord', '~> 4.0'
-  s.add_dependency 'activesupport', '~> 4.0'
-  s.add_development_dependency 'rspec', '~> 3.0'
+  s.add_dependency 'activerecord', '>= 4.0', '< 6.0'
+  s.add_dependency 'activesupport', '>= 4.0', '< 6.0'
+  s.add_development_dependency 'rspec', '~> 3.4'
   s.add_development_dependency 'rake', '~> 10.2'
 end

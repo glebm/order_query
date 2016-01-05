@@ -229,7 +229,7 @@ describe 'OrderQuery' do
             post  = create_post
             point = OrderQuery::Point.new(post, space)
             expect(point.inspect).to(
-                eq %Q(#<OrderQuery::Point @record=#<Post id: #{post.id}, pinned: false, published_at: #{post.published_at.to_s[0..-7].inspect}> @space=#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, pinned: boolean, published_at: datetime)>>)
+                eq %Q(#<OrderQuery::Point @record=#<Post id: #{post.id}, pinned: false, published_at: #{post.attribute_for_inspect(:published_at)}> @space=#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, pinned: boolean, published_at: datetime)>>)
             )
           end
 
