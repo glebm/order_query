@@ -3,14 +3,20 @@ rvm:
 - 2.3.0
 - jruby
 - rbx-2
-cache: bundler
-bundler_args: --path ../../vendor/bundle --without debug
 gemfile:
- - spec/gemfiles/rails_4.gemfile
- - spec/gemfiles/rails_5.gemfile
+- spec/gemfiles/rails_4.gemfile
+- spec/gemfiles/rails_5.gemfile
+matrix:
+  exclude:
+  - rvm: jruby
+    gemfile: spec/gemfiles/rails_5.gemfile
+  - rvm: rbx-2
+    gemfile: spec/gemfiles/rails_5.gemfile
 env:
   global:
   - TRAVIS=1
   # codeclimate repo token
   - secure: "hbCYInnd/+2AEj/NgjBG3OA9E5zfsfwBnKtGEhccfEoSrP1AcrFOvbfxOatIrCUJTkKqQ9a3Tglnl5N/eOIAOBIaPW14hDxhuEj524YdKKc/HqRBTkN9xwcV1qAkh2DSDcDbdcpzuoJ7s8spQ/nP1Q47j7oHe58+nHpiLTBBgjo="
 sudo: false
+cache: bundler
+bundler_args: --path ../../vendor/bundle --without debug

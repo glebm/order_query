@@ -11,7 +11,7 @@ This gem finds the next or previous record(s) relative to the current one effici
 Add to Gemfile:
 
 ```ruby
-gem 'order_query', '~> 0.3.2'
+gem 'order_query', '~> 0.3.3'
 ```
 
 ## Usage
