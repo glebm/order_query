@@ -1,3 +1,7 @@
+## 0.3.3
+
+* Now compatible with Rails 5 beta 1.
+
 ## 0.3.2
 
 * Optimization: do not wrap top-level disjunctive in `AND` when the column has an enumerated order. [Read more](https://github.com/glebm/order_query/issues/3#issuecomment-54764638).
