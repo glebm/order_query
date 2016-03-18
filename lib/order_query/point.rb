@@ -56,8 +56,13 @@ module OrderQuery
       scope.where(query, *query_args)
     end
 
-    def value(cond)
-      record.send(cond.name)
+    # @param column [Column]
+    def value(column)
+      v = record.send(column.name)
+      if v.nil? && !column.nullable?
+        fail "Column #{column.inspect} is NULL on record #{@record.inspect}. Set the `nulls` option to :first or :last."
+      end
+      v
     end
 
     def inspect

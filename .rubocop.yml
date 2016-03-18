@@ -1,0 +1,16 @@
+Metrics/MethodLength:
+  Max: 25
+
+Metrics/PerceivedComplexity:
+  Max: 10
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+Metrics/BlockLength:
+  Exclude:
+  - spec/**/*.rb
+
+Style/SignalException:
+  EnforcedStyle: semantic
+

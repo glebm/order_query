@@ -1,16 +1,16 @@
 module OrderQuery
   module SQL
     class Column
-      attr_reader :column, :scope
+      attr_reader :scope, :column
 
-      def initialize(column, scope)
-        @column = column
+      def initialize(scope, column)
         @scope = scope
+        @column = column
       end
 
       def column_name
         @column_name ||= begin
-          sql = column.options[:sql]
+          sql = column.custom_sql
           if sql
             sql.respond_to?(:call) ? sql.call : sql
           else

@@ -26,7 +26,7 @@ class Issue < ActiveRecord::Base
       [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
       [:updated_at, :desc],
       [:id, :desc]
-  ]
+  ].freeze
 
   def valid_votes_count
     votes - suspicious_votes
@@ -54,7 +54,28 @@ def wrap_top_level_or(value)
   end
 end
 
-describe 'OrderQuery' do
+RSpec.describe 'OrderQuery' do
+
+  context 'Column' do
+    it 'fails with ArgumentError if invalid vals_and_or_dir is passed' do
+      expect {
+        OrderQuery::Column.new(Post.all, :pinned, :desc, :extra)
+      }.to raise_error(ArgumentError)
+    end
+  end
+
+  context 'Point' do
+    context '#value' do
+      it 'fails if nil on non-nullable column' do
+        post = OpenStruct.new
+        post.pinned = nil
+        space = Post.seek([:pinned])
+        expect {
+          OrderQuery::Point.new(post, space).value(:pinned)
+        }.to raise_error
+      end
+    end
+  end
 
   [false, true].each do |wrap_top_level_or|
     context "(wtlo: #{wrap_top_level_or})" do
@@ -63,26 +84,26 @@ describe 'OrderQuery' do
       context 'Issue test model' do
         t = Time.now
         datasets = [
-            [
-                ['high', 5, 0, t, true],
-                ['high', 5, 1, t, true],
-                ['high', 5, 0, t],
-                ['high', 5, 0, t - 1.day],
-                ['high', 5, 1, t],
-                ['medium', 10, 0, t],
-                ['medium', 10, 5, t - 12.hours],
-                ['low', 30, 0, t + 1.day]
-            ],
-            [
-                ['high', 5, 0, t],
-                ['high', 5, 1, t],
-                ['high', 5, 1, t - 1.day],
-                ['low', 30, 0, t + 1.day]
-            ],
-            [
-                ['high', 5, 1, t - 1.day],
-                ['low', 30, 0, t + 1.day]
-            ],
+          [
+            ['high', 5, 0, t, true],
+            ['high', 5, 1, t, true],
+            ['high', 5, 0, t],
+            ['high', 5, 0, t - 1.day],
+            ['high', 5, 1, t],
+            ['medium', 10, 0, t],
+            ['medium', 10, 5, t - 12.hours],
+            ['low', 30, 0, t + 1.day]
+          ],
+          [
+            ['high', 5, 0, t],
+            ['high', 5, 1, t],
+            ['high', 5, 1, t - 1.day],
+            ['low', 30, 0, t + 1.day]
+          ],
+          [
+            ['high', 5, 1, t - 1.day],
+            ['low', 30, 0, t + 1.day]
+          ]
         ]
 
         datasets.each_with_index do |ds, i|
@@ -126,7 +147,9 @@ describe 'OrderQuery' do
           expect(Issue.seek([[:id, ids]]).count).to eq ids.length
           expect(Issue.seek([:id, ids]).count).to eq ids.length
           expect(Issue.seek([:id, ids]).scope.pluck(:id)).to eq ids
-          expect(Issue.seek([:id, ids]).scope_reverse.pluck(:id)).to eq ids.reverse
+          expect(Issue.seek([:id, ids]).scope_reverse.pluck(:id)).to(
+              eq(ids.reverse)
+          )
         end
 
         context 'partitioned on a boolean flag' do
@@ -172,7 +195,31 @@ describe 'OrderQuery' do
         it '#seek falls back to scope when order column is missing self' do
           a = create_issue(priority: 'medium')
           b = create_issue(priority: 'high')
-          expect(a.seek(Issue.display_order, [[:priority, ['wontfix', 'askbob']], [:id, :desc]]).next).to eq(b)
+          expect(
+            a.seek(
+              Issue.display_order,
+              [[:priority, %w[wontfix askbob]], [:id, :desc]]
+            ).next
+          ).to eq(b)
+        end
+
+        context 'nil in string enum' do
+          priorities = [nil, 'low', 'medium', 'high']
+          let!(:issues) { priorities.map { |p| create_issue(priority: p) } }
+          priorities.permutation do |p|
+            it "works for #{p} (desc)" do
+              scope = Issue.seek([:priority, p]).scope
+              actual = scope.all.map(&:priority)
+              expected = p
+              expect(actual).to eq(expected), scope.to_sql
+            end
+            it "works for #{p} (asc)" do
+              scope = Issue.seek([:priority, p, :asc]).scope
+              actual = scope.all.map(&:priority)
+              expected = p.reverse
+              expect(actual).to eq(expected), scope.to_sql
+            end
+          end
         end
 
         before do
@@ -217,8 +264,8 @@ describe 'OrderQuery' do
 
         context '#inspect' do
           it 'Column' do
-            expect(OrderQuery::Column.new([:id, :desc], Post).inspect).to eq '(id unique desc)'
-            expect(OrderQuery::Column.new([:virtual, :desc, sql: 'SIN(id)'], Post).inspect).to eq '(virtual SIN(id) desc)'
+            expect(OrderQuery::Column.new(Post, :id, :desc).inspect).to eq '(id unique desc)'
+            expect(OrderQuery::Column.new(Post, :virtual, :desc, sql: 'SIN(id)').inspect).to eq '(virtual SIN(id) desc)'
           end
 
           let(:space) {
@@ -229,12 +276,12 @@ describe 'OrderQuery' do
             post = create_post
             point = OrderQuery::Point.new(post, space)
             expect(point.inspect).to(
-                eq %Q(#<OrderQuery::Point @record=#<Post id: #{post.id}, pinned: false, published_at: #{post.attribute_for_inspect(:published_at)}> @space=#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, pinned: boolean, published_at: datetime)>>)
+                eq %Q(#<OrderQuery::Point @record=#<Post id: #{post.id}, title: nil, pinned: false, published_at: #{post.attribute_for_inspect(:published_at)}> @space=#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, title: string, pinned: boolean, published_at: datetime)>>)
             )
           end
 
           it 'Space' do
-            expect(space.inspect).to eq '#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, pinned: boolean, published_at: datetime)>'
+            expect(space.inspect).to eq '#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, title: string, pinned: boolean, published_at: datetime)>'
           end
         end
 
@@ -260,35 +307,127 @@ describe 'OrderQuery' do
           end
         end
 
-        xcontext 'nil in enum' do
+        context 'nil in boolean enum' do
           states = [nil, false, true]
           let!(:posts) { states.map { |state| create_post(pinned: state) } }
           states.permutation do |p|
             # There is no cross-DB SQL that can be generated to position nil results
             # http://use-the-index-luke.com/sql/sorting-grouping/order-by-asc-desc-nulls-last
-            next unless p.first.nil? || p.last.nil?
+            # next unless p.first.nil? || p.last.nil?
             # Positioning NULLs first or last can be achieved, but remains on the ToDo / contributions welcome list
-            it "nil in enum works for #{p}" do
-              expect(Post.seek([:pinned, p]).scope.all.map(&:pinned)).to eq(p)
-              expect(Post.seek([:pinned, p, :asc]).scope.all.map(&:pinned)).to eq(p.reverse)
+            it "works for #{p} (desc)" do
+              scope = Post.seek([:pinned, p]).scope
+              actual = scope.all.map(&:pinned)
+              expected = p
+              expect(actual).to eq(expected), scope.to_sql
             end
+            it "works for #{p} (asc)" do
+              scope = Post.seek([:pinned, p, :asc]).scope
+              actual = scope.all.map(&:pinned)
+              expected = p.reverse
+              expect(actual).to eq(expected), scope.to_sql
+            end
+          end
+        end
+
+        context 'nil published_at' do
+          def expect_next(space, post, next_post)
+            point = space.at(post)
+            actual = point.next
+            failure_message =
+              "expected: #{post.title}.next == #{next_post.title}\n" \
+              "     got: #{actual ? actual.title : 'nil'}\n" \
+              "     all: #{space.scope.all.map(&:title)}\n" \
+              "     sql: #{space.at(older).before.limit(1).to_sql}"
+            expect(actual ? actual.title : nil).to eq(next_post.title),
+                                                   failure_message
+          end
+
+          def expect_prev(space, post, prev_post)
+            point = space.at(post)
+            actual = point.previous
+            failure_message =
+              "expected: #{post.title}.previous == #{prev_post.title}\n" \
+              "     got: #{actual ? actual.title : 'nil'}\n" \
+              "     all: #{space.scope.all.map(&:title)}\n" \
+              "     sql: #{space.at(older).before.limit(1).to_sql}"
+            expect(actual ? actual.title : nil).to eq(prev_post.title),
+                                                   failure_message
+          end
+
+          let! :null do
+            Post.create!(title: 'null', published_at: nil).reload
+          end
+          let! :older do
+            Post.create!(title: 'older', published_at: Time.now + 1.hour)
+          end
+          let! :newer do
+            Post.create!(title: 'newer', published_at: Time.now - 1.hour)
+          end
+
+          it 'orders nulls first (desc)' do
+            space = Post.seek([:published_at, :desc, nulls: :first])
+            scope = space.scope
+            actual = scope.all.map(&:title)
+            expected = [null, older, newer].map(&:title)
+            expect(actual).to eq(expected), scope.to_sql
+            expect_next space, older, newer
+            expect_prev space, newer, older
+            expect_prev space, older, null
+            expect_next space, null, older
+          end
+
+          it 'orders nulls first (asc)' do
+            space = Post.seek([:published_at, :asc, nulls: :first])
+            scope = space.scope
+            actual = scope.all.map(&:title)
+            expected = [null, newer, older].map(&:title)
+            expect(actual).to eq(expected), scope.to_sql
+            expect_prev space, newer, null
+            expect_next space, null, newer
+          end
+
+          it 'orders nulls last (desc)' do
+            space = Post.seek([:published_at, :desc, nulls: :last])
+            scope = space.scope
+            actual = scope.all.map(&:title)
+            expected = [older, newer, null].map(&:title)
+            expect(actual).to eq(expected), scope.to_sql
+            expect_next space, newer, null
+            expect_prev space, null, newer
+          end
+
+          it 'orders nulls last (asc)' do
+            space = Post.seek([:published_at, :asc, nulls: :last])
+            scope = space.scope
+            actual = scope.all.map(&:title)
+            expected = [newer, older, null].map(&:title)
+            expect(actual).to eq(expected), scope.to_sql
+            expect_next space, older, null
+            expect_prev space, null, older
           end
         end
 
         context 'after/before no strict' do
           context 'by middle attribute in search order' do
-            let!(:base) { Post.create! pinned: true, published_at: Time.now }
-            let!(:older) { Post.create! pinned: true, published_at: Time.now + 1.hour }
-            let!(:younger) { Post.create! pinned: true, published_at: Time.now - 1.hour }
+            let! :base do
+              Post.create! pinned: true, published_at: Time.now
+            end
+            let! :older do
+              Post.create! pinned: true, published_at: Time.now + 1.hour
+            end
+            let! :newer do
+              Post.create! pinned: true, published_at: Time.now - 1.hour
+            end
 
             it 'includes first element' do
               point = Post.order_list_at(base)
 
               expect(point.after.count).to eq 1
-              expect(point.after.to_a).to eq [younger]
+              expect(point.after.to_a).to eq [newer]
 
               expect(point.after(false).count).to eq 2
-              expect(point.after(false).to_a).to eq [base, younger]
+              expect(point.after(false).to_a).to eq [base, newer]
               expect(point.before(false).to_a).to eq [base, older]
             end
           end
@@ -318,10 +457,12 @@ describe 'OrderQuery' do
           ActiveRecord::Schema.define do
             self.verbose = false
             create_table :posts do |t|
+              t.string :title
               t.boolean :pinned
               t.datetime :published_at
             end
           end
+          Post.reset_column_information
         end
         after :all do
           ActiveRecord::Migration.drop_table :posts
@@ -358,6 +499,7 @@ describe 'OrderQuery' do
           t.datetime :updated_at, null: false
         end
       end
+      User.reset_column_information
     end
 
     after :all do

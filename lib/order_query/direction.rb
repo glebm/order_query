@@ -1,7 +1,7 @@
 module OrderQuery
   # Responsible for handling :asc and :desc
   module Direction
-    extend self
+    module_function
 
     DIRECTIONS = [:asc, :desc].freeze
 
@@ -15,14 +15,12 @@ module OrderQuery
       all[(all.index(direction) + 1) % 2].to_sym
     end
 
-    # @param [:asc, :desc, String] direction
+    # @param [:asc, :desc] direction
     # @raise [ArgumentError]
     # @return [:asc, :desc]
     def parse!(direction)
-      if all.include?(direction)
-        direction
-      end or
-          raise ArgumentError.new("sort direction must be in #{all.map(&:inspect).join(', ')}, is #{direction.inspect}")
+      all.include?(direction) && direction or
+          fail ArgumentError.new("sort direction must be in #{all.map(&:inspect).join(', ')}, is #{direction.inspect}")
     end
   end
 end

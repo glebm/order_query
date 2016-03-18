@@ -8,14 +8,15 @@ module OrderQuery
     delegate :count, :empty?, to: :@base_scope
 
     # @param [ActiveRecord::Relation] base_scope
-    # @param [Array<Array<Symbol,String>>, OrderQuery::Spec] order_spec
+    # @param [Array<Array<Symbol,String>>] order_spec
+    # @see Column#initialize for the order_spec element format.
     def initialize(base_scope, order_spec)
       @base_scope   = base_scope
-      @columns   = order_spec.map { |cond_spec| Column.new(cond_spec, base_scope) }
+      @columns   = order_spec.map { |cond_spec| Column.new(base_scope, *cond_spec) }
       # add primary key if columns are not unique
       unless @columns.last.unique?
         raise ArgumentError.new('Unique column must be last') if @columns.detect(&:unique?)
-        @columns << Column.new([base_scope.primary_key], base_scope)
+        @columns << Column.new(base_scope, base_scope.primary_key)
       end
       @order_by_sql = SQL::OrderBy.new(@columns)
     end
