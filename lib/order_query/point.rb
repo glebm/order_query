@@ -31,20 +31,23 @@ module OrderQuery
       space.count - after.count
     end
 
+    # @param [true, false] strict choose if the given scope should include or not the record, default not to include it (strict true)
     # @return [ActiveRecord::Relation]
-    def after
-      side :after
+    def after(strict = true)
+      side :after, strict
     end
 
+    # @param [true, false] strict choose if the given scope should include or not the record, default not to include it (strict true)
     # @return [ActiveRecord::Relation]
-    def before
-      side :before
+    def before(strict = true)
+      side :before, strict
     end
 
     # @param [:before, :after] side
+    # @param [true, false] strict choose if the given scope should include or not the record, default not to include it (strict true)
     # @return [ActiveRecord::Relation]
-    def side(side)
-      query, query_args = @where_sql.build(side)
+    def side(side, strict = true)
+      query, query_args = @where_sql.build(side, strict)
       scope = if side == :after
                 space.scope
               else

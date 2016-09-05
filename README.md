@@ -66,6 +66,10 @@ p.next     #=> #<Post>
 p.position #=> 5
 ```
 
+You can use `before` and `after` to build pagination. Both method accepts an additional boolean argument to decide if
+the relation should include the given point or not. By default they don't, if you want to include it use `before(true)`
+or `after(true)`.
+
 Looping to the first / last record is enabled for `next` / `previous` by default. Pass `false` to disable:
 
 ```ruby

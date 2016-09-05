@@ -61,7 +61,7 @@ describe 'OrderQuery' do
       wrap_top_level_or wrap_top_level_or
 
       context 'Issue test model' do
-        t        = Time.now
+        t = Time.now
         datasets = [
             [
                 ['high', 5, 0, t, true],
@@ -226,7 +226,7 @@ describe 'OrderQuery' do
           }
 
           it 'Point' do
-            post  = create_post
+            post = create_post
             point = OrderQuery::Point.new(post, space)
             expect(point.inspect).to(
                 eq %Q(#<OrderQuery::Point @record=#<Post id: #{post.id}, pinned: false, published_at: #{post.attribute_for_inspect(:published_at)}> @space=#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, pinned: boolean, published_at: datetime)>>)
@@ -271,6 +271,42 @@ describe 'OrderQuery' do
             it "nil in enum works for #{p}" do
               expect(Post.seek([:pinned, p]).scope.all.map(&:pinned)).to eq(p)
               expect(Post.seek([:pinned, p, :asc]).scope.all.map(&:pinned)).to eq(p.reverse)
+            end
+          end
+        end
+
+        context 'after/before no strict' do
+          context 'by middle attribute in search order' do
+            let!(:base) { Post.create! pinned: true, published_at: Time.now }
+            let!(:older) { Post.create! pinned: true, published_at: Time.now + 1.hour }
+            let!(:younger) { Post.create! pinned: true, published_at: Time.now - 1.hour }
+
+            it 'includes first element' do
+              point = Post.order_list_at(base)
+
+              expect(point.after.count).to eq 1
+              expect(point.after.to_a).to eq [younger]
+
+              expect(point.after(false).count).to eq 2
+              expect(point.after(false).to_a).to eq [base, younger]
+              expect(point.before(false).to_a).to eq [base, older]
+            end
+          end
+
+          context 'by last attribute in search order' do
+            let!(:base) { Post.create! pinned: true, published_at: Time.new(2016, 5, 1, 5, 4, 3), id: 6 }
+            let!(:previous) { Post.create! pinned: true, published_at: Time.new(2016, 5, 1, 5, 4, 3), id: 4 }
+            let!(:next_one) { Post.create! pinned: true, published_at: Time.new(2016, 5, 1, 5, 4, 3), id: 9 }
+
+            it 'includes first element' do
+              point = Post.order_list_at(base)
+
+              expect(point.after.count).to eq 1
+              expect(point.after.to_a).to eq [previous]
+
+              expect(point.after(false).count).to eq 2
+              expect(point.after(false).to_a).to eq [base, previous]
+              expect(point.before(false).to_a).to eq [base, next_one]
             end
           end
         end
