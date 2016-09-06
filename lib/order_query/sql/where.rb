@@ -19,10 +19,11 @@ module OrderQuery
       #     invoice < 3 OR
       #     invoices = 3 AND (
       #       ... ))
-      def build(side)
+      def build(side, strict = true)
         # generate pairs of terms such as sales < 5, sales = 5
-        terms = @columns.map { |col|
-          [where_side(col, side, true), where_tie(col)].reject { |x| x == WHERE_IDENTITY }
+        terms = @columns.map.with_index { |col, i|
+          be_strict = (i != @columns.size - 1) ? true : strict
+          [where_side(col, side, be_strict), where_tie(col)].reject { |x| x == WHERE_IDENTITY }
         }
         # group pairwise with OR, and nest with AND
         query = foldr_terms terms.map { |pair| join_terms 'OR'.freeze, *pair }, 'AND'.freeze
