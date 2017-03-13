@@ -4,7 +4,7 @@ require 'order_query/sql/column'
 module OrderQuery
   # An order column (sort column)
   class Column
-    attr_reader :name, :order_enum, :options
+    attr_reader :name, :order_enum, :value, :options
     delegate :column_name, :quote, to: :@sql
 
     # @option spec [String] :unique    Mark the attribute as unique to avoid redundant columns
@@ -22,6 +22,7 @@ module OrderQuery
           complete: true
       )
       @unique    = @options[:unique]
+      @value     = @options[:value]
       @sql       = SQL::Column.new(self, scope)
     end
 
@@ -61,6 +62,7 @@ module OrderQuery
           (@order_enum.inspect if order_enum),
           ('unique' if @unique),
           (column_name if options[:sql]),
+          (value if @value),
           @direction
       ].compact
       "(#{parts.join(' ')})"

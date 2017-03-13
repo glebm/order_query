@@ -12,6 +12,10 @@ class Post < ActiveRecord::Base
               [:pinned, [true, false]],
               [:published_at, :desc],
               [:id, :desc]
+
+  def virtual_attr
+    Random.new.rand(100)
+  end
 end
 
 def create_post(attr = {})
@@ -308,6 +312,13 @@ describe 'OrderQuery' do
               expect(point.after(false).to_a).to eq [base, previous]
               expect(point.before(false).to_a).to eq [base, next_one]
             end
+          end
+        end
+
+        context 'order by custom value' do
+          it 'generates correct SQL' do
+            after_scope = create_post.seek([[:virtual_attr, :desc, sql: 'va', value: 100]]).after
+            expect(after_scope.to_sql).to include('va < 100 OR va = 100')
           end
         end
 
