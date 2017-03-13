@@ -57,7 +57,7 @@ module OrderQuery
     end
 
     def value(cond)
-      record.send(cond.name)
+      cond.value || record.send(cond.name)
     end
 
     def inspect
