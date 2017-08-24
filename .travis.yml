@@ -17,4 +17,9 @@ env:
   - secure: "hbCYInnd/+2AEj/NgjBG3OA9E5zfsfwBnKtGEhccfEoSrP1AcrFOvbfxOatIrCUJTkKqQ9a3Tglnl5N/eOIAOBIaPW14hDxhuEj524YdKKc/HqRBTkN9xwcV1qAkh2DSDcDbdcpzuoJ7s8spQ/nP1Q47j7oHe58+nHpiLTBBgjo="
 script:
 - COVERAGE=1 bundle exec rspec --force-color --format d
-- bundle exec codeclimate-test-reporter
+- |
+    if [ -z "$COVERAGE" ]; then
+      echo 'Skipping coverage'
+    else
+      bundle exec codeclimate-test-reporter
+    fi
