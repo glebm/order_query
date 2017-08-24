@@ -1,17 +1,11 @@
 language: ruby
 rvm:
-- 2.3.0
+- 2.3
 - jruby
-- rbx-2
 gemfile:
-- spec/gemfiles/rails_4.gemfile
-- spec/gemfiles/rails_5.gemfile
-matrix:
-  exclude:
-  - rvm: jruby
-    gemfile: spec/gemfiles/rails_5.gemfile
-  - rvm: rbx-2
-    gemfile: spec/gemfiles/rails_5.gemfile
+- spec/gemfiles/rails_4_2.gemfile
+- spec/gemfiles/rails_5_0.gemfile
+- spec/gemfiles/rails_5_1.gemfile
 env:
   global:
   - TRAVIS=1
