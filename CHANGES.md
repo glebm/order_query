@@ -1,3 +1,10 @@
+## 0.3.4
+
+* The `before` and `after` methods now accept a boolean argument that indicates 
+  whether the relation should exclude the given point or not.
+  By default the given point is excluded, if you want to include it,
+  use `before(false)` / `after(false)`.
+
 ## 0.3.3
 
 * Now compatible with Rails 5 beta 1.
