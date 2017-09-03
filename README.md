@@ -16,23 +16,24 @@ gem 'order_query', '~> 0.3.4'
 
 ## Usage
 
-Define a named list of attributes to order by with `order_query(name, *order)`:
+Use `order_query(scope_name, *order_option)` to create scopes and class methods
+in your model and specify how you want results ordered. A basic example:
 
 ```ruby
 class Post < ActiveRecord::Base
   include OrderQuery
   order_query :order_home,
-    [:pinned, [true, false]],
-    [:published_at, :desc]
+    [:pinned, [true, false]], # First sort by :pinned over t/f in :desc order
+    [:published_at, :desc] # Next sort :published_at in :desc order
 end
 ```
 
-Each attributes is specified as:
+Each order option specified in `order_query` is an array in the following form:
 
-1. Attribute name.
-2. Optionally, values to order by, such as `%w(high medium low)` or `[true, false]`.
-3. Sort direction, `:asc` or `:desc`. Default: `:asc`; `:desc` when values to order by are specified.
-4. Options:
+1. Symbol of the attribute name (required).
+2. An array of values to order by, such as `%w(high medium low)` or `[true, false]` (optional).
+3. Sort direction, `:asc` or `:desc` (optional). Default: `:asc`; `:desc` when values to order by are specified.
+4. A hash (optional):
 
 | option     | description                                                                |
 |------------|----------------------------------------------------------------------------|
@@ -66,10 +67,17 @@ p.next     #=> #<Post>
 p.position #=> 5
 ```
 
-The `before` and `after` methods also accept a boolean argument that indicates 
+The `before` and `after` methods also accept a boolean argument that indicates
 whether the relation should exclude the given point or not.
 By default the given point is excluded, if you want to include it,
 use `before(false)` / `after(false)`.
+
+If you want to obtain only a chunk (i.e., a page), use `before` or `after`
+with ActiveRecord's `limit` method:
+
+```ruby
+p.after.limit(20) #=> #<ActiveRecord::Relation>
+```
 
 Looping to the first / last record is enabled for `next` / `previous` by default. Pass `false` to disable:
 
