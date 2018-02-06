@@ -11,8 +11,10 @@ RSpec::Core::RakeTask.new(:spec)
 
 task default: :spec
 
+# rubocop:disable Metrics/BlockLength,Style/StderrPuts
+
 desc 'Test all Gemfiles from spec/*.gemfile'
-task :test_all_gemfiles do # rubocop:disable Metrics/BlockLength
+task :test_all_gemfiles do
   require 'pty'
   require 'shellwords'
   cmd      = 'bundle install --quiet && bundle exec rake --trace'
@@ -42,3 +44,5 @@ task :test_all_gemfiles do # rubocop:disable Metrics/BlockLength
     exit 1
   end
 end
+
+# rubocop:enable Metrics/BlockLength,Style/StderrPuts
