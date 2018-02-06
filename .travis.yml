@@ -12,8 +12,14 @@ gemfile:
 - spec/gemfiles/rails_5_2.gemfile
 matrix:
   allow_failures:
+  # One test fails on JRuby + sqlite3, reason unknown.
   - rvm: jruby
     env: DB=sqlite3
+  # Needs activerecord-jdbcpostgresql-adapter v51.0+ release
+  # https://github.com/jruby/activerecord-jdbc-adapter/issues/780
+  - rvm: jruby
+    gemfile: spec/gemfiles/rails_5_2.gemfile
+    env: DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
 env:
   matrix:
   # Username and password from http://docs.travis-ci.com/user/database-setup/
