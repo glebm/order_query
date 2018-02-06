@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 module OrderQuery
   # Handles nulls :first and :last direction.
   module NullsDirection
     module_function
 
-    DIRECTIONS = [:first, :last].freeze
+    DIRECTIONS = %i[first last].freeze
 
     def all
       DIRECTIONS
@@ -20,21 +22,22 @@ module OrderQuery
     # @return [:first, :last]
     def parse!(direction)
       all.include?(direction) && direction or
-          raise ArgumentError.new("nulls must be in #{all.map(&:inspect).join(', ')}, is #{direction.inspect}")
+        fail ArgumentError,
+             "`nulls` must be in #{all.map(&:inspect).join(', ')}, "\
+             "is #{direction.inspect}"
     end
 
-    # Returns the default nulls order, based on the given scope's connection adapter name.
-    #
     # @param scope [ActiveRecord::Relation]
     # @param dir [:asc, :desc]
-    # @return [:first, :last]
+    # @return [:first, :last] the default nulls order, based on the given
+    #   scope's connection adapter name.
     def default(scope, dir)
       case scope.connection_config[:adapter]
-        when /mysql|maria|sqlite|sqlserver/i
-          (dir == :asc ? :first : :last)
-        else
-          # Oracle, Postgres
-          (dir == :asc ? :last : :first)
+      when /mysql|maria|sqlite|sqlserver/i
+        (dir == :asc ? :first : :last)
+      else
+        # Oracle, Postgres
+        (dir == :asc ? :last : :first)
       end
     end
   end

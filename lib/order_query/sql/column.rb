@@ -1,5 +1,8 @@
+# frozen_string_literal: true
+
 module OrderQuery
   module SQL
+    # A column in the given scope.
     class Column
       attr_reader :scope, :column
 
@@ -14,7 +17,8 @@ module OrderQuery
           if sql
             sql.respond_to?(:call) ? sql.call : sql
           else
-            connection.quote_table_name(scope.table_name) + '.' + connection.quote_column_name(column.name)
+            "#{connection.quote_table_name(scope.table_name)}."\
+            "#{connection.quote_column_name(column.name)}"
           end
         end
       end

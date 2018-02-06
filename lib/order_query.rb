@@ -1,12 +1,17 @@
+# frozen_string_literal: true
+
 require 'active_support'
 require 'active_record'
 require 'order_query/space'
 require 'order_query/point'
 
+# This gem finds the next or previous record(s) relative to the current one
+# efficiently using keyset pagination, e.g. for navigation or infinite scroll.
 module OrderQuery
   extend ActiveSupport::Concern
 
-  # @param [ActiveRecord::Relation] scope optional first argument (default: self.class.all)
+  # @param [ActiveRecord::Relation] scope optional first argument
+  #   (default: self.class.all)
   # @param [Array<Array<Symbol,String>>, OrderQuery::Spec] order_spec
   # @return [OrderQuery::Point]
   # @example
@@ -15,13 +20,15 @@ module OrderQuery
   #   next_user = user.seek(users, [:activated_at, :desc], [:id, :desc]).next
   def seek(*spec)
     fst = spec.first
-    if fst.nil? || fst.is_a?(ActiveRecord::Relation) || fst.is_a?(ActiveRecord::Base)
+    if fst.nil? || fst.is_a?(ActiveRecord::Relation) ||
+       fst.is_a?(ActiveRecord::Base)
       scope = spec.shift
     end
     scope ||= self.class.all
     scope.seek(*spec).at(self)
   end
 
+  # Top-level functions.
   module ClassMethods
     # @return [OrderQuery::Space]
     def seek(*spec)
@@ -31,7 +38,9 @@ module OrderQuery
     end
 
     #= DSL
+
     protected
+
     # @param [Symbol] name
     # @param [Array<Array<Symbol,String>>] order_spec
     # @example

@@ -11,6 +11,9 @@ Metrics/BlockLength:
   Exclude:
   - spec/**/*.rb
 
+Style/AndOr:
+  Enabled: false
+
 Style/SignalException:
   EnforcedStyle: semantic
 

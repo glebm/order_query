@@ -1,5 +1,8 @@
+# frozen_string_literal: true
+
 module OrderQuery
   module SQL
+    # Constructs SQL for ORDER BY.
     class OrderBy
       # @param [Array<Column>]
       def initialize(columns)
@@ -40,10 +43,14 @@ module OrderQuery
         clauses.join(', ').freeze
       end
 
+      # rubocop:disable Metrics/AbcSize
+
       def column_clause_enum(col, reverse = false)
         # Collapse booleans enum to `ORDER BY column ASC|DESC`
         return optimize_enum_bools(col, reverse) if optimize_enum_bools?(col)
-        return optimize_enum_bools_nil(col, reverse) if optimize_enum_bools_nil?(col)
+        if optimize_enum_bools_nil?(col)
+          return optimize_enum_bools_nil(col, reverse)
+        end
         clauses = []
         with_nulls = false
         if col.order_enum.include?(nil)
@@ -57,6 +64,7 @@ module OrderQuery
         end)
         clauses.join(', ').freeze
       end
+      # rubocop:enable Metrics/AbcSize
 
       def needs_null_sort?(col, reverse,
                            nulls_direction = col.nulls_direction(reverse))

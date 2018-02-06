@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 module OrderQuery
   # Responsible for handling :asc and :desc
   module Direction
     module_function
 
-    DIRECTIONS = [:asc, :desc].freeze
+    DIRECTIONS = %i[asc desc].freeze
 
     def all
       DIRECTIONS
@@ -20,7 +22,9 @@ module OrderQuery
     # @return [:asc, :desc]
     def parse!(direction)
       all.include?(direction) && direction or
-          fail ArgumentError.new("sort direction must be in #{all.map(&:inspect).join(', ')}, is #{direction.inspect}")
+        fail ArgumentError,
+             "sort direction must be in #{all.map(&:inspect).join(', ')}, "\
+             "is #{direction.inspect}"
     end
   end
 end

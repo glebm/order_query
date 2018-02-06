@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'order_query/space'
 require 'order_query/sql/where'
 require 'order_query/errors'
@@ -16,7 +18,8 @@ module OrderQuery
       @where_sql = SQL::Where.new(self)
     end
 
-    # @params [true, false] loop if true, consider last and first as adjacent (unless they are equal)
+    # @param [true, false] loop if true, loops as if the last and the first
+    #   records were adjacent, unless there is only one record.
     # @return [ActiveRecord::Base]
     def next(loop = true)
       unless_record_eq after.first || (first if loop)
@@ -32,20 +35,23 @@ module OrderQuery
       space.count - after.count
     end
 
-    # @param [true, false] strict choose if the given scope should include or not the record, default not to include it (strict true)
+    # @param [true, false] strict if false, the given scope will include the
+    #   record at this point.
     # @return [ActiveRecord::Relation]
     def after(strict = true)
       side :after, strict
     end
 
-    # @param [true, false] strict choose if the given scope should include or not the record, default not to include it (strict true)
+    # @param [true, false] strict if false, the given scope will include the
+    #   record at this point.
     # @return [ActiveRecord::Relation]
     def before(strict = true)
       side :before, strict
     end
 
     # @param [:before, :after] side
-    # @param [true, false] strict choose if the given scope should include or not the record, default not to include it (strict true)
+    # @param [true, false] strict if false, the given scope will include the
+    #   record at this point.
     # @return [ActiveRecord::Relation]
     def side(side, strict = true)
       query, query_args = @where_sql.build(side, strict)
@@ -63,7 +69,7 @@ module OrderQuery
       if v.nil? && !column.nullable?
         fail Errors::NonNullableColumnIsNullError,
              "Column #{column.inspect} is NULL on record #{@record.inspect}. "\
-             "Set the `nulls` option to :first or :last."
+             'Set the `nulls` option to :first or :last.'
       end
       v
     end

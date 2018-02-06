@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Configure Rails Environment
 ENV['RAILS_ENV'] = ENV['RACK_ENV'] = 'test'
 if ENV['COVERAGE'] && !%w[rbx jruby].include?(RUBY_ENGINE)

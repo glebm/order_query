@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 module OrderQuery
   module SQL
-    # Build where clause for searching around a record in an order space
+    # Builds where clause for searching around a record in an order space.
     class Where
       attr_reader :point
 
@@ -12,7 +14,9 @@ module OrderQuery
 
       # Join column pairs with OR, and nest within each other with AND
       # @param [:before or :after] side
-      # @return [query, parameters] WHERE columns matching records strictly before / after this one
+      # @return [query, parameters] WHERE columns matching records strictly
+      #   before / after this one.
+      #
       #   sales < 5 OR
       #   sales = 5 AND (
       #     invoice < 3 OR
@@ -20,12 +24,14 @@ module OrderQuery
       #       ... ))
       def build(side, strict = true)
         # generate pairs of terms such as sales < 5, sales = 5
-        terms = @columns.map.with_index { |col, i|
-          be_strict = (i != @columns.size - 1) ? true : strict
-          [where_side(col, side, be_strict), where_tie(col)].reject { |x| x == WHERE_IDENTITY }
-        }
+        terms = @columns.map.with_index do |col, i|
+          be_strict = i != @columns.size - 1 ? true : strict
+          [where_side(col, side, be_strict), where_tie(col)].reject do |x|
+            x == WHERE_IDENTITY
+          end
+        end
         # group pairwise with OR, and nest with AND
-        query = foldr_terms terms.map { |pair| join_terms 'OR'.freeze, *pair }, 'AND'.freeze
+        query = foldr_terms terms.map { |pair| join_terms 'OR', *pair }, 'AND'
         if ::OrderQuery.wrap_top_level_or
           # wrap in a redundant AND clause for performance
           query = wrap_top_level_or query, terms, side
@@ -47,7 +53,8 @@ module OrderQuery
       # joins terms with an operator, empty terms are skipped
       # @return [query, parameters]
       def join_terms(op, *terms)
-        [terms.map(&:first).reject(&:empty?).join(" #{op} "), terms.map(&:second).reduce([], :+)]
+        [terms.map(&:first).reject(&:empty?).join(" #{op} "),
+         terms.map(&:second).reduce([], :+)]
       end
 
       def wrap_term_with_parens(t)
@@ -65,8 +72,11 @@ module OrderQuery
       # Read more at https://github.com/glebm/order_query/issues/3
       def wrap_top_level_or(query, terms, side)
         top_term_i = terms.index(&:present?)
-        if top_term_i && terms[top_term_i].length == 2 && !(col = @columns[top_term_i]).order_enum
-          join_terms 'AND'.freeze, where_side(col, side, false), wrap_term_with_parens(query)
+        if top_term_i && terms[top_term_i].length == 2 &&
+           !(col = @columns[top_term_i]).order_enum
+          join_terms 'AND',
+                     where_side(col, side, false),
+                     wrap_term_with_parens(query)
         else
           query
         end
@@ -82,7 +92,8 @@ module OrderQuery
       end
 
       # @param [:before or :after] side
-      # @return [query, params] return query fragment for column values before / after the current one
+      # @return [query, params] return query fragment for column values
+      #   before / after the current one.
       def where_side(col, side, strict = true, value = point.value(col))
         if col.order_enum
           where_in col, col.enum_side(value, side, strict)
@@ -95,12 +106,12 @@ module OrderQuery
         join_terms 'OR',
                    (values.include?(nil) ? where_eq(col, nil) : WHERE_IDENTITY),
                    case (non_nil_values = values - [nil]).length
-                     when 0
-                       WHERE_IDENTITY
-                     when 1
-                       where_eq col, non_nil_values
-                     else
-                       ["#{col.column_name} IN (?)".freeze, [non_nil_values]]
+                   when 0
+                     WHERE_IDENTITY
+                   when 1
+                     where_eq col, non_nil_values
+                   else
+                     ["#{col.column_name} IN (?)", [non_nil_values]]
                    end
       end
 
@@ -112,8 +123,11 @@ module OrderQuery
         end
       end
 
-      RAY_OP = { asc: '>'.freeze, desc: '<'.freeze }.freeze
+      RAY_OP = { asc: '>', desc: '<' }.freeze
       NULLS_ORD = { first: 'IS NOT NULL', last: 'IS NULL' }.freeze
+
+      # rubocop:disable Metrics/AbcSize
+
       def where_ray(col, from, mode, strict = true)
         reverse = (mode == :before)
         if from.nil?
@@ -129,8 +143,9 @@ module OrderQuery
           end
         end
       end
+      # rubocop:enable Metrics/AbcSize
 
-      WHERE_IDENTITY = [''.freeze, [].freeze].freeze
+      WHERE_IDENTITY = ['', [].freeze].freeze
 
       private
 

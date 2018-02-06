@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 # Bare model
@@ -10,22 +12,22 @@ class Post < ActiveRecord::Base
   include OrderQuery
   order_query :order_list,
               [:pinned, [true, false]],
-              [:published_at, :desc],
-              [:id, :desc]
+              %i[published_at desc],
+              %i[id desc]
 end
 
 def create_post(attr = {})
-  Post.create!({pinned: false, published_at: Time.now}.merge(attr))
+  Post.create!({ pinned: false, published_at: Time.now }.merge(attr))
 end
 
 # Advanced model
 class Issue < ActiveRecord::Base
   DISPLAY_ORDER = [
-      [:pinned, [true, false]],
-      [:priority, %w(high medium low)],
-      [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
-      [:updated_at, :desc],
-      [:id, :desc]
+    [:pinned, [true, false]],
+    [:priority, %w[high medium low]],
+    [:valid_votes_count, :desc, sql: '(votes - suspicious_votes)'],
+    %i[updated_at desc],
+    %i[id desc]
   ].freeze
 
   def valid_votes_count
@@ -34,11 +36,14 @@ class Issue < ActiveRecord::Base
 
   include OrderQuery
   order_query :display_order, DISPLAY_ORDER
-  order_query :id_order_asc, [[:id, :asc]]
+  order_query :id_order_asc, [%i[id asc]]
 end
 
 def create_issue(attr = {})
-  Issue.create!({priority: 'high', votes: 3, suspicious_votes: 0, updated_at: Time.now}.merge(attr))
+  Issue.create!(
+    { priority: 'high', votes: 3, suspicious_votes: 0, updated_at: Time.now }
+      .merge(attr)
+  )
 end
 
 def wrap_top_level_or(value)
@@ -55,12 +60,11 @@ def wrap_top_level_or(value)
 end
 
 RSpec.describe 'OrderQuery' do
-
   context 'Column' do
     it 'fails with ArgumentError if invalid vals_and_or_dir is passed' do
-      expect {
+      expect do
         OrderQuery::Column.new(Post.all, :pinned, :desc, :extra)
-      }.to raise_error(ArgumentError)
+      end.to raise_error(ArgumentError)
     end
   end
 
@@ -70,10 +74,10 @@ RSpec.describe 'OrderQuery' do
         post = OpenStruct.new
         post.pinned = nil
         space = Post.seek([:pinned])
-        expect {
+        expect do
           OrderQuery::Point.new(post, space)
-            .value(space.columns.find { |c| c.name == :pinned })
-        }.to raise_error(OrderQuery::Errors::NonNullableColumnIsNullError)
+                           .value(space.columns.find { |c| c.name == :pinned })
+        end.to raise_error(OrderQuery::Errors::NonNullableColumnIsNullError)
       end
     end
   end
@@ -83,46 +87,56 @@ RSpec.describe 'OrderQuery' do
       wrap_top_level_or wrap_top_level_or
 
       context 'Issue test model' do
-        t = Time.now
-        datasets = [
+        datasets = lambda {
+          t = Time.now
           [
-            ['high', 5, 0, t, true],
-            ['high', 5, 1, t, true],
-            ['high', 5, 0, t],
-            ['high', 5, 0, t - 1.day],
-            ['high', 5, 1, t],
-            ['medium', 10, 0, t],
-            ['medium', 10, 5, t - 12.hours],
-            ['low', 30, 0, t + 1.day]
-          ],
-          [
-            ['high', 5, 0, t],
-            ['high', 5, 1, t],
-            ['high', 5, 1, t - 1.day],
-            ['low', 30, 0, t + 1.day]
-          ],
-          [
-            ['high', 5, 1, t - 1.day],
-            ['low', 30, 0, t + 1.day]
+            [
+              ['high', 5, 0, t, true],
+              ['high', 5, 1, t, true],
+              ['high', 5, 0, t],
+              ['high', 5, 0, t - 1.day],
+              ['high', 5, 1, t],
+              ['medium', 10, 0, t],
+              ['medium', 10, 5, t - 12.hours],
+              ['low', 30, 0, t + 1.day]
+            ],
+            [
+              ['high', 5, 0, t],
+              ['high', 5, 1, t],
+              ['high', 5, 1, t - 1.day],
+              ['low', 30, 0, t + 1.day]
+            ],
+            [
+              ['high', 5, 1, t - 1.day],
+              ['low', 30, 0, t + 1.day]
+            ]
           ]
-        ]
+        }.call
 
         datasets.each_with_index do |ds, i|
           it "is ordered correctly (test data #{i})" do
             issues = ds.map do |attr|
-              Issue.new(priority: attr[0], votes: attr[1], suspicious_votes: attr[2], updated_at: attr[3], pinned: attr[4] || false)
+              Issue.new(priority: attr[0], votes: attr[1],
+                        suspicious_votes: attr[2], updated_at: attr[3],
+                        pinned: attr[4] || false)
             end
             issues.shuffle.reverse_each(&:save!)
             expect(Issue.display_order.to_a).to eq(issues)
             expect(Issue.display_order_reverse.to_a).to eq(issues.reverse)
-            issues.zip(issues.rotate).each_with_index do |(cur, nxt), i|
-              expect(cur.display_order.position).to eq(i + 1)
+            issues.zip(issues.rotate).each_with_index do |(cur, nxt), j|
+              expect(cur.display_order.position).to eq(j + 1)
               expect(cur.display_order.next).to eq(nxt)
               expect(Issue.display_order_at(cur).next).to eq nxt
               expect(cur.display_order.space.count).to eq(Issue.count)
-              expect(cur.display_order.before.count + 1 + cur.display_order.after.count).to eq(nxt.display_order.count)
+              expect(
+                cur.display_order.before.count + 1 +
+                  cur.display_order.after.count
+              ).to eq(nxt.display_order.count)
               expect(nxt.display_order.previous).to eq(cur)
-              expect(nxt.display_order.before.to_a.reverse + [nxt] + nxt.display_order.after.to_a).to eq(Issue.display_order.to_a)
+              expect(
+                nxt.display_order.before.to_a.reverse + [nxt] +
+                  nxt.display_order.after.to_a
+              ).to eq(Issue.display_order.to_a)
             end
           end
         end
@@ -139,17 +153,19 @@ RSpec.describe 'OrderQuery' do
           expect(a.id_order_asc.next).to eq b
           expect(b.id_order_asc.previous).to eq a
           expect([a] + a.id_order_asc.after.to_a).to eq(Issue.id_order_asc.to_a)
-          expect(b.id_order_asc.before.reverse.to_a + [b]).to eq(Issue.id_order_asc.to_a)
+          expect(b.id_order_asc.before.reverse.to_a + [b]).to(
+            eq Issue.id_order_asc.to_a
+          )
           expect(Issue.id_order_asc.count).to eq(2)
         end
 
         it '.seek works on a list of ids' do
-          ids = 3.times.map { create_issue.id }
+          ids = Array.new(3) { create_issue.id }
           expect(Issue.seek([[:id, ids]]).count).to eq ids.length
           expect(Issue.seek([:id, ids]).count).to eq ids.length
           expect(Issue.seek([:id, ids]).scope.pluck(:id)).to eq ids
           expect(Issue.seek([:id, ids]).scope_reverse.pluck(:id)).to(
-              eq(ids.reverse)
+            eq(ids.reverse)
           )
         end
 
@@ -160,7 +176,7 @@ RSpec.describe 'OrderQuery' do
             create_issue(active: true)
           end
 
-          let!(:order) { [[:id, :desc]] }
+          let!(:order) { [%i[id desc]] }
           let!(:active) { Issue.where(active: true).seek(order) }
           let!(:inactive) { Issue.where(active: false).seek(order) }
 
@@ -199,7 +215,7 @@ RSpec.describe 'OrderQuery' do
           expect(
             a.seek(
               Issue.display_order,
-              [[:priority, %w[wontfix askbob]], [:id, :desc]]
+              [[:priority, %w[wontfix askbob]], %i[id desc]]
             ).next
           ).to eq(b)
         end
@@ -265,27 +281,32 @@ RSpec.describe 'OrderQuery' do
 
         context '#inspect' do
           it 'Column' do
-            expect(OrderQuery::Column.new(Post, :id, :desc).inspect).to eq '(id unique desc)'
-            expect(OrderQuery::Column.new(Post, :virtual, :desc, sql: 'SIN(id)').inspect).to eq '(virtual SIN(id) desc)'
+            expect(OrderQuery::Column.new(Post, :id, :desc).inspect)
+              .to eq '(id unique desc)'
+            expect(
+              OrderQuery::Column.new(Post, :virtual, :desc, sql: 'SIN(id)')
+                  .inspect
+            ).to eq '(virtual SIN(id) desc)'
           end
 
-          let(:space) {
+          let(:space) do
             OrderQuery::Space.new(Post, [[:pinned, [true, false]]])
-          }
+          end
 
           it 'Point' do
             post = create_post
             point = OrderQuery::Point.new(post, space)
-            expect(point.inspect).to(
-                eq %Q(#<OrderQuery::Point @record=#<Post id: #{post.id}, title: nil, pinned: false, published_at: #{post.attribute_for_inspect(:published_at)}> @space=#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, title: string, pinned: boolean, published_at: datetime)>>)
-            )
+            # rubocop:disable Metrics/LineLength
+            expect(point.inspect).to eq %(#<OrderQuery::Point @record=#<Post id: #{post.id}, title: nil, pinned: false, published_at: #{post.attribute_for_inspect(:published_at)}> @space=#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, title: string, pinned: boolean, published_at: datetime)>>)
+            # rubocop:enable Metrics/LineLength
           end
 
           it 'Space' do
+            # rubocop:disable Metrics/LineLength
             expect(space.inspect).to eq '#<OrderQuery::Space @columns=[(pinned [true, false] desc), (id unique asc)] @base_scope=Post(id: integer, title: string, pinned: boolean, published_at: datetime)>'
+            # rubocop:enable Metrics/LineLength
           end
         end
-
 
         context 'boolean enum order' do
           before do
@@ -297,15 +318,24 @@ RSpec.describe 'OrderQuery' do
           end
           it 'ORDER BY is collapsed' do
             expect(Post.seek([:pinned, [true, false]]).scope.to_sql).to(
-              match /ORDER BY .posts.\..pinned. DESC/)
+              match(/ORDER BY .posts.\..pinned. DESC/)
+            )
           end
           it 'enum asc' do
-            expect(Post.seek([:pinned, [false, true], :asc]).scope.pluck(:pinned)).to eq([true, false])
-            expect(Post.seek([:pinned, [true, false], :asc]).scope.pluck(:pinned)).to eq([false, true])
+            expect(
+              Post.seek([:pinned, [false, true], :asc]).scope.pluck(:pinned)
+            ).to eq([true, false])
+            expect(
+              Post.seek([:pinned, [true, false], :asc]).scope.pluck(:pinned)
+            ).to eq([false, true])
           end
           it 'enum desc' do
-            expect(Post.seek([:pinned, [false, true], :desc]).scope.pluck(:pinned)).to eq([false, true])
-            expect(Post.seek([:pinned, [true, false], :desc]).scope.pluck(:pinned)).to eq([true, false])
+            expect(
+              Post.seek([:pinned, [false, true], :desc]).scope.pluck(:pinned)
+            ).to eq([false, true])
+            expect(
+              Post.seek([:pinned, [true, false], :desc]).scope.pluck(:pinned)
+            ).to eq([true, false])
           end
         end
 
@@ -313,10 +343,6 @@ RSpec.describe 'OrderQuery' do
           states = [nil, false, true]
           let!(:posts) { states.map { |state| create_post(pinned: state) } }
           states.permutation do |p|
-            # There is no cross-DB SQL that can be generated to position nil results
-            # http://use-the-index-luke.com/sql/sorting-grouping/order-by-asc-desc-nulls-last
-            # next unless p.first.nil? || p.last.nil?
-            # Positioning NULLs first or last can be achieved, but remains on the ToDo / contributions welcome list
             it "works for #{p} (desc)" do
               scope = Post.seek([:pinned, p]).scope
               actual = scope.all.map(&:pinned)
@@ -333,6 +359,8 @@ RSpec.describe 'OrderQuery' do
         end
 
         context 'nil published_at' do
+          # rubocop:disable Metrics/AbcSize
+
           def expect_next(space, post, next_post)
             point = space.at(post)
             actual = point.next
@@ -356,6 +384,7 @@ RSpec.describe 'OrderQuery' do
             expect(actual ? actual.title : nil).to eq(prev_post.title),
                                                    failure_message
           end
+          # rubocop:enable Metrics/AbcSize
 
           let! :null do
             Post.create!(title: 'null', published_at: nil).reload
@@ -435,9 +464,21 @@ RSpec.describe 'OrderQuery' do
           end
 
           context 'by last attribute in search order' do
-            let!(:base) { Post.create! pinned: true, published_at: Time.new(2016, 5, 1, 5, 4, 3), id: 6 }
-            let!(:previous) { Post.create! pinned: true, published_at: Time.new(2016, 5, 1, 5, 4, 3), id: 4 }
-            let!(:next_one) { Post.create! pinned: true, published_at: Time.new(2016, 5, 1, 5, 4, 3), id: 9 }
+            let!(:base) do
+              Post.create! pinned: true,
+                           published_at: Time.new(2016, 5, 1, 5, 4, 3),
+                           id: 6
+            end
+            let!(:previous) do
+              Post.create! pinned: true,
+                           published_at: Time.new(2016, 5, 1, 5, 4, 3),
+                           id: 4
+            end
+            let!(:next_one) do
+              Post.create! pinned: true,
+                           published_at: Time.new(2016, 5, 1, 5, 4, 3),
+                           id: 9
+            end
 
             it 'includes first element' do
               point = Post.order_list_at(base)
@@ -477,7 +518,8 @@ RSpec.describe 'OrderQuery' do
     context 'wrap top-level OR on' do
       wrap_top_level_or true
       it 'wraps top-level OR' do
-        after_scope = User.create!(updated_at: Date.parse('2014-09-06')).seek([[:updated_at, :desc], [:id, :desc]]).after
+        after_scope = User.create!(updated_at: Date.parse('2014-09-06'))
+                          .seek([%i[updated_at desc], %i[id desc]]).after
         expect(after_scope.to_sql).to include('<=')
       end
     end
@@ -485,7 +527,8 @@ RSpec.describe 'OrderQuery' do
     context 'wrap top-level OR off' do
       wrap_top_level_or false
       it 'does not wrap top-level OR' do
-        after_scope = User.create!(updated_at: Date.parse('2014-09-06')).seek([[:updated_at, :desc], [:id, :desc]]).after
+        after_scope = User.create!(updated_at: Date.parse('2014-09-06'))
+                          .seek([%i[updated_at desc], %i[id desc]]).after
         expect(after_scope.to_sql).to_not include('<=')
       end
     end
