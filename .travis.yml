@@ -7,7 +7,6 @@ rvm:
 - 2.3
 - jruby
 gemfile:
-- spec/gemfiles/rails_4_2.gemfile
 - spec/gemfiles/rails_5_0.gemfile
 - spec/gemfiles/rails_5_1.gemfile
 matrix:
