@@ -1,5 +1,6 @@
 require 'order_query/space'
 require 'order_query/sql/where'
+require 'order_query/errors'
 
 module OrderQuery
   # Search around a record in an order space
@@ -60,7 +61,9 @@ module OrderQuery
     def value(column)
       v = record.send(column.name)
       if v.nil? && !column.nullable?
-        fail "Column #{column.inspect} is NULL on record #{@record.inspect}. Set the `nulls` option to :first or :last."
+        fail Errors::NonNullableColumnIsNullError,
+             "Column #{column.inspect} is NULL on record #{@record.inspect}. "\
+             "Set the `nulls` option to :first or :last."
       end
       v
     end
