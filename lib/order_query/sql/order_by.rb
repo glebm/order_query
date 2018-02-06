@@ -31,23 +31,54 @@ module OrderQuery
         end
       end
 
-      def column_clause_ray(col, reverse = false)
-        "#{col.column_name} #{sort_direction_sql(col, reverse)}".freeze
+      def column_clause_ray(col, reverse = false,
+                            with_null_clause = needs_null_sort?(col, reverse))
+        clauses = []
+        # TODO: use NULLS FIRST/LAST where supported.
+        clauses << order_by_nulls_sql(col, reverse) if with_null_clause
+        clauses << "#{col.column_name} #{sort_direction_sql(col, reverse)}"
+        clauses.join(', ').freeze
       end
 
       def column_clause_enum(col, reverse = false)
-        enum = col.order_enum
-        # Collapse boolean enum to `ORDER BY column ASC|DESC`
-        if enum == [false, true] || enum == [true, false]
-          return column_clause_ray col, reverse ^ enum.last
+        # Collapse booleans enum to `ORDER BY column ASC|DESC`
+        return optimize_enum_bools(col, reverse) if optimize_enum_bools?(col)
+        return optimize_enum_bools_nil(col, reverse) if optimize_enum_bools_nil?(col)
+        clauses = []
+        with_nulls = false
+        if col.order_enum.include?(nil)
+          with_nulls = true
+        elsif needs_null_sort?(col, reverse)
+          clauses << order_by_nulls_sql(col, reverse)
         end
-        enum.map { |v|
-          "#{order_by_value_sql col, v} #{sort_direction_sql(col, reverse)}"
-        }.join(', ').freeze
+        clauses.concat(col.order_enum.map do |v|
+          "#{order_by_value_sql col, v, with_nulls} " \
+            "#{sort_direction_sql(col, reverse)}"
+        end)
+        clauses.join(', ').freeze
       end
 
-      def order_by_value_sql(col, v)
-        "#{col.column_name}=#{col.quote v}"
+      def needs_null_sort?(col, reverse,
+                           nulls_direction = col.nulls_direction(reverse))
+        return false unless col.nullable?
+        nulls_direction != col.default_nulls_direction(reverse)
+      end
+
+      def order_by_nulls_sql(col, reverse)
+        "#{col.column_name} IS NULL #{sort_direction_sql(col, reverse)}"
+      end
+
+      def order_by_value_sql(col, v, with_nulls = false)
+        if with_nulls
+          if v.nil?
+            "#{col.column_name} IS NULL"
+          else
+            "#{col.column_name} IS NOT NULL AND " \
+               "#{col.column_name}=#{col.quote v}"
+          end
+        else
+          "#{col.column_name}=#{col.quote v}"
+        end
       end
 
       # @return [String]
@@ -58,6 +89,35 @@ module OrderQuery
       # @param [Array<String>] clauses
       def join_order_by_clauses(clauses)
         clauses.join(', ').freeze
+      end
+
+      private
+
+      def optimize_enum_bools?(col)
+        col.order_enum == [false, true] || col.order_enum == [true, false]
+      end
+
+      def optimize_enum_bools(col, reverse)
+        column_clause_ray(col, col.order_enum[-1] ^ reverse)
+      end
+
+      ENUM_SET_TRUE_FALSE_NIL = Set[false, true, nil]
+
+      def optimize_enum_bools_nil?(col)
+        Set.new(col.order_enum) == ENUM_SET_TRUE_FALSE_NIL &&
+          !col.order_enum[1].nil?
+      end
+
+      def optimize_enum_bools_nil(col, reverse)
+        last_bool_true = if col.order_enum[-1].nil?
+                           col.order_enum[-2]
+                         else
+                           col.order_enum[-1]
+                         end
+        reverse_override = last_bool_true ^ reverse
+        with_nulls_sort =
+          needs_null_sort?(col, reverse_override, col.nulls_direction(reverse))
+        column_clause_ray(col, reverse_override, with_nulls_sort)
       end
     end
   end
