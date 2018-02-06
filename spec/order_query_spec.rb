@@ -71,8 +71,9 @@ RSpec.describe 'OrderQuery' do
         post.pinned = nil
         space = Post.seek([:pinned])
         expect {
-          OrderQuery::Point.new(post, space).value(:pinned)
-        }.to raise_error
+          OrderQuery::Point.new(post, space)
+            .value(space.columns.find { |c| c.name == :pinned })
+        }.to raise_error(OrderQuery::Errors::NonNullableColumnIsNullError)
       end
     end
   end
@@ -295,7 +296,8 @@ RSpec.describe 'OrderQuery' do
             Post.delete_all
           end
           it 'ORDER BY is collapsed' do
-            expect(Post.seek([:pinned, [true, false]]).scope.to_sql).to include('ORDER BY "posts"."pinned" DESC')
+            expect(Post.seek([:pinned, [true, false]]).scope.to_sql).to(
+              match /ORDER BY .posts.\..pinned. DESC/)
           end
           it 'enum asc' do
             expect(Post.seek([:pinned, [false, true], :asc]).scope.pluck(:pinned)).to eq([true, false])

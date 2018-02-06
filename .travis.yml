@@ -17,6 +17,11 @@ matrix:
   - rvm: jruby
     gemfile: spec/gemfiles/rails_5_1.gemfile
 env:
+  matrix:
+  # Username and password from http://docs.travis-ci.com/user/database-setup/
+  - DB=sqlite3
+  - DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
+  - DB=mysql2 DB_USERNAME=root DB_PASSWORD=""
   global:
   - TRAVIS=1
   # codeclimate repo token

@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly NAME=order_query
+
+readonly GREEN='\033[0;32m'
+readonly RESET_COLOR='\033[0m'
+
+if [[ "$#" -ne 0 ]]; then cat <<HELP && exit
+Usage: script/create-db-users
+Create the ${NAME} database users for all the supported databases.
+If the \`DB\` environment variable is set, do the above only for that database.
+HELP
+fi
+
+readonly USER="$NAME"
+readonly PASS="$NAME"
+log() {
+  if [ -t 1 ]; then echo -e >&2 "${GREEN}create-db-users: $@${RESET_COLOR}"; else echo >&2 "$@"; fi
+}
+
+create_mysql_user() {
+  if mysql -s -u"$USER" -p"$PASS" -e '' 2>/dev/null; then return; fi
+  log "Creating MySQL '$USER' user. MySQL root password required."
+  local mysql_flags
+  if [ -n "${TRAVIS+x}" ]; then
+    mysql_flags=''
+  else
+    mysql_flags='-p'
+  fi
+  mysql --verbose -uroot $mysql_flags <<SQL
+GRANT ALL PRIVILEGES ON \`${NAME}_gem_dev\`.* TO '$USER'@'localhost' IDENTIFIED BY '$PASS';
+GRANT ALL PRIVILEGES ON \`${NAME}_gem_test\`.* TO '$USER'@'localhost';
+SQL
+}
+
+create_postgresql_user() {
+  if PGPASSWORD="$PASS" psql -h 127.0.0.1 postgres -U $USER -c '' 2> /dev/null; then return; fi
+  log "Creating Postgres '$USER' user."
+  local cmd='psql postgres'
+  if ! $cmd -c '' 2>/dev/null; then
+    log "sudo required:"
+    cmd="sudo -u ${PG_DAEMON_USER:-postgres} psql postgres"
+  fi
+  $cmd --echo-all <<SQL
+CREATE ROLE $USER LOGIN PASSWORD '$PASS';
+ALTER ROLE $USER CREATEDB;
+SQL
+}
+
+[ -z "${DB+x}" -o "${DB+x}" = 'mysql2' ] && create_mysql_user
+[ -z "${DB+x}" -o "${DB+x}" = 'postgresql' ] && create_postgresql_user
