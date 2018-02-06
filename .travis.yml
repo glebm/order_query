@@ -9,9 +9,11 @@ rvm:
 gemfile:
 - spec/gemfiles/rails_5_0.gemfile
 - spec/gemfiles/rails_5_1.gemfile
+- spec/gemfiles/rails_5_2.gemfile
 matrix:
   allow_failures:
   - rvm: jruby
+    env: DB=sqlite3
 env:
   matrix:
   # Username and password from http://docs.travis-ci.com/user/database-setup/
