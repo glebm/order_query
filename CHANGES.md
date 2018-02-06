@@ -1,3 +1,9 @@
+## 0.4.0
+
+* Adds nulls ordering options `nulls: :first` and `nulls: :last`.
+* Now supports Rails 5.2.
+* Dropped support for Rails < 5 and Ruby < 2.3.
+
 ## 0.3.4
 
 * The `before` and `after` methods now accept a boolean argument that indicates 

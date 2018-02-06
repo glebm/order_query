@@ -11,7 +11,7 @@ This gem finds the next or previous record(s) relative to the current one effici
 Add to Gemfile:
 
 ```ruby
-gem 'order_query', '~> 0.3.4'
+gem 'order_query', '~> 0.4.0'
 ```
 
 ## Usage
@@ -39,6 +39,7 @@ Each order option specified in `order_query` is an array in the following form:
 |------------|----------------------------------------------------------------------------|
 | unique     | Unique attribute. Default: `true` for primary key, `false` otherwise.      |
 | sql        | Customize column SQL.                                                      |
+| nulls      | If set to `:first` or `:last`, orders `NULL`s accordingly.                 |
 
 If no unique column is specified, `[primary_key, :asc]` is used. Unique column must be last.
 
