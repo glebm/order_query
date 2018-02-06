@@ -73,6 +73,10 @@ module OrderQuery
       end
 
       def order_by_nulls_sql(col, reverse)
+        if col.default_nulls_direction !=
+           (col.direction == :asc ? :first : :last)
+          reverse = !reverse
+        end
         "#{col.column_name} IS NULL #{sort_direction_sql(col, reverse)}"
       end
 
