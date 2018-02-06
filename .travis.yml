@@ -12,9 +12,6 @@ gemfile:
 matrix:
   allow_failures:
   - rvm: jruby
-    gemfile: spec/gemfiles/rails_5_0.gemfile
-  - rvm: jruby
-    gemfile: spec/gemfiles/rails_5_1.gemfile
 env:
   matrix:
   # Username and password from http://docs.travis-ci.com/user/database-setup/

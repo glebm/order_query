@@ -34,12 +34,13 @@ module OrderQuery
 
     # @return [ActiveRecord::Relation] scope ordered by columns
     def scope
-      @scope ||= @base_scope.order(@order_by_sql.build)
+      @scope ||= @base_scope.order(Arel.sql(@order_by_sql.build))
     end
 
     # @return [ActiveRecord::Relation] scope ordered by columns in reverse
     def scope_reverse
-      @scope_reverse ||= @base_scope.order(@order_by_sql.build_reverse)
+      @scope_reverse ||= @base_scope
+                         .order(Arel.sql(@order_by_sql.build_reverse))
     end
 
     # @return [ActiveRecord::Base]
