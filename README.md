@@ -1,4 +1,4 @@
-# order_query [![Build Status][travis-badge]][travis] [![Code Climate][codeclimate-badge]][codeclimate] [![Coverage Status][coverage-badge]][coverage]
+# order_query [![Build Status][travis-badge]][travis] [![Coverage Status][coverage-badge]][coverage]
 
 <a href="http://use-the-index-luke.com/no-offset">
   <img src="http://use-the-index-luke.com/img/no-offset.q200.png" alt="100% offset-free" align="right" width="106" height="106">
@@ -183,7 +183,5 @@ This project uses MIT license.
 [travis]: http://travis-ci.org/glebm/order_query
 [travis-badge]: http://img.shields.io/travis/glebm/order_query.svg
 [gemnasium]: https://gemnasium.com/glebm/order_query
-[codeclimate]: https://codeclimate.com/github/glebm/order_query
-[codeclimate-badge]: http://img.shields.io/codeclimate/github/glebm/order_query.svg
 [coverage]: https://codeclimate.com/github/glebm/order_query
-[coverage-badge]: https://codeclimate.com/github/glebm/order_query/badges/coverage.svg
+[coverage-badge]: https://api.codeclimate.com/v1/badges/82e424e9ee2acb02292c/test_coverage
