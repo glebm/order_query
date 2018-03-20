@@ -14,6 +14,12 @@ Metrics/BlockLength:
   Exclude:
   - spec/**/*.rb
 
+Naming/MemoizedInstanceVariableName:
+  Enabled: false
+
+Naming/UncommunicativeMethodParamName:
+  Enabled: false
+
 Style/AndOr:
   Enabled: false
 

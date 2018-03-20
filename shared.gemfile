@@ -1,13 +1,15 @@
+# frozen_string_literal: true
+
 platforms :mri, :rbx do
-  gem 'sqlite3', '>= 1.3.11'
   gem 'mysql2', '>= 0.4.10'
   gem 'pg', '~> 0.21.0'
+  gem 'sqlite3', '>= 1.3.11'
 end
 
 platform :jruby do
-  gem 'activerecord-jdbcsqlite3-adapter'
   gem 'activerecord-jdbcmysql-adapter'
   gem 'activerecord-jdbcpostgresql-adapter'
+  gem 'activerecord-jdbcsqlite3-adapter'
 end
 
 group :test do

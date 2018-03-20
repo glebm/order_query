@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-$LOAD_PATH.push File.expand_path('../lib', __FILE__)
+$LOAD_PATH.push File.expand_path('lib', __dir__)
 require 'order_query/version'
 
 # Describe your gem and declare its dependencies:
@@ -25,6 +25,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'activesupport', '>= 5.0', '< 6.0'
   s.add_development_dependency 'rake', '~> 10.2'
   s.add_development_dependency 'rspec', '~> 3.4'
-  s.add_development_dependency 'rubocop'
+  s.add_development_dependency 'rubocop', '~> 0.53.0'
   s.add_development_dependency 'simplecov'
 end
