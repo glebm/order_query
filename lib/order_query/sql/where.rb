@@ -94,9 +94,11 @@ module OrderQuery
       # @param [:before or :after] side
       # @return [query, params] return query fragment for column values
       #   before / after the current one.
-      def where_side(col, side, strict = true, value = point.value(col))
+      def where_side(col, side, strict, value = point.value(col))
         if col.order_enum
           where_in col, col.enum_side(value, side, strict)
+        elsif value.nil?
+          where_null col, side, strict
         else
           where_ray col, value, side, strict
         end
@@ -126,24 +128,23 @@ module OrderQuery
       RAY_OP = { asc: '>', desc: '<' }.freeze
       NULLS_ORD = { first: 'IS NOT NULL', last: 'IS NULL' }.freeze
 
-      # rubocop:disable Metrics/AbcSize
-
-      def where_ray(col, from, mode, strict = true)
-        reverse = (mode == :before)
-        if from.nil?
-          ["#{col.column_name} #{NULLS_ORD[col.nulls_direction(reverse)]}", []]
+      def where_null(col, mode, strict)
+        if strict && col.nulls_direction(mode == :before) != :last
+          ["#{col.column_name} IS NOT NULL", []]
         else
-          ["#{col.column_name} " \
-           "#{RAY_OP[col.direction(reverse)]}#{'=' unless strict} ?",
-           [from]].tap do |ray|
-            if col.nullable? && col.nulls_direction(reverse) == :last
-              ray[0] += " OR #{col.column_name} IS NULL"
-              ray[0] = "(#{ray[0]})"
-            end
+          WHERE_IDENTITY
+        end
+      end
+
+      def where_ray(col, from, mode, strict)
+        ["#{col.column_name} "\
+         "#{RAY_OP[col.direction(mode == :before)]}#{'=' unless strict} ?",
+         [from]].tap do |ray|
+          if col.nullable? && col.nulls_direction(mode == :before) == :last
+            ray[0] = "(#{ray[0]} OR #{col.column_name} IS NULL)"
           end
         end
       end
-      # rubocop:enable Metrics/AbcSize
 
       WHERE_IDENTITY = ['', [].freeze].freeze
 
