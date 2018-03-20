@@ -368,7 +368,7 @@ RSpec.describe 'OrderQuery' do
               "expected: #{post.title}.next == #{next_post.title}\n" \
               "     got: #{actual ? actual.title : 'nil'}\n" \
               "     all: #{space.scope.all.map(&:title)}\n" \
-              "     sql: #{space.at(older).before.limit(1).to_sql}"
+              "     sql: #{space.at(post).after.limit(1).to_sql}"
             expect(actual ? actual.title : nil).to eq(next_post.title),
                                                    failure_message
           end
@@ -380,14 +380,35 @@ RSpec.describe 'OrderQuery' do
               "expected: #{post.title}.previous == #{prev_post.title}\n" \
               "     got: #{actual ? actual.title : 'nil'}\n" \
               "     all: #{space.scope.all.map(&:title)}\n" \
-              "     sql: #{space.at(older).before.limit(1).to_sql}"
+              "     sql: #{space.at(post).before.limit(1).to_sql}"
             expect(actual ? actual.title : nil).to eq(prev_post.title),
                                                    failure_message
           end
+
+          def expect_order(space, ordered)
+            actual = space.scope.all.map(&:title)
+            expected = ordered.map(&:title)
+            failure_message =
+              "expected: #{expected * ', '}\n"\
+              "     got: #{actual * ', '}\n"\
+              "     sql: #{space.scope.to_sql}"
+            expect(actual).to eq(expected), failure_message
+
+            ordered.each_cons(2) do |post, next_post|
+              expect_next space, post, next_post
+              expect_prev space, next_post, post
+            end
+            expect_next space, ordered.last, ordered.first
+            expect_prev space, ordered.first, ordered.last
+          end
+
           # rubocop:enable Metrics/AbcSize
 
-          let! :null do
-            Post.create!(title: 'null', published_at: nil).reload
+          let! :null_1 do
+            Post.create!(title: 'null_1', published_at: nil).reload
+          end
+          let! :null_2 do
+            Post.create!(title: 'null_2', published_at: nil).reload
           end
           let! :older do
             Post.create!(title: 'older', published_at: Time.now + 1.hour)
@@ -398,44 +419,22 @@ RSpec.describe 'OrderQuery' do
 
           it 'orders nulls first (desc)' do
             space = Post.seek([:published_at, :desc, nulls: :first])
-            scope = space.scope
-            actual = scope.all.map(&:title)
-            expected = [null, older, newer].map(&:title)
-            expect(actual).to eq(expected), scope.to_sql
-            expect_next space, older, newer
-            expect_prev space, newer, older
-            expect_prev space, older, null
-            expect_next space, null, older
+            expect_order space, [null_1, null_2, older, newer]
           end
 
           it 'orders nulls first (asc)' do
             space = Post.seek([:published_at, :asc, nulls: :first])
-            scope = space.scope
-            actual = scope.all.map(&:title)
-            expected = [null, newer, older].map(&:title)
-            expect(actual).to eq(expected), scope.to_sql
-            expect_prev space, newer, null
-            expect_next space, null, newer
+            expect_order space, [null_1, null_2, newer, older]
           end
 
           it 'orders nulls last (desc)' do
             space = Post.seek([:published_at, :desc, nulls: :last])
-            scope = space.scope
-            actual = scope.all.map(&:title)
-            expected = [older, newer, null].map(&:title)
-            expect(actual).to eq(expected), scope.to_sql
-            expect_next space, newer, null
-            expect_prev space, null, newer
+            expect_order space, [older, newer, null_1, null_2]
           end
 
           it 'orders nulls last (asc)' do
             space = Post.seek([:published_at, :asc, nulls: :last])
-            scope = space.scope
-            actual = scope.all.map(&:title)
-            expected = [newer, older, null].map(&:title)
-            expect(actual).to eq(expected), scope.to_sql
-            expect_next space, older, null
-            expect_prev space, null, older
+            expect_order space, [newer, older, null_1, null_2]
           end
         end
 
