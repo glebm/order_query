@@ -1,3 +1,9 @@
+## 0.4.1
+
+* If a column had a `nulls:` option and there were multiple records with `NULL`,
+  all of these records but one were previously skipped. This is now fixed.
+  [#21](https://github.com/glebm/order_query/issues/21)
+
 ## 0.4.0
 
 * Adds nulls ordering options `nulls: :first` and `nulls: :last`.
