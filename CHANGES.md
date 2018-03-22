@@ -1,3 +1,10 @@
+## 0.4.2 (not released yet)
+
+* Fixes support for `nil`s with explicit order, when a `nil` is neither
+  the first nor the last element of the explicit order,
+  e.g. `status: ['assigned', nil, 'fixed']`.
+  [#93b08877](https://github.com/glebm/order_query/commit/93b08877790a0ff02eea0d835def6ff3c40a83da)
+
 ## 0.4.1
 
 * If a column had a `nulls:` option and there were multiple records with `NULL`,
