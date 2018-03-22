@@ -365,7 +365,7 @@ RSpec.describe 'OrderQuery' do
             it "works for #{perm} (asc)" do
               expect_order(
                 Post.seek([:pinned, perm, :asc]),
-                posts.sort_by { |x| [perm.index(x.pinned), -x.id] }.reverse,
+                posts.sort_by { |x| [-perm.index(x.pinned), x.id] },
                 &display
               )
             end
