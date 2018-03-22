@@ -221,20 +221,27 @@ RSpec.describe 'OrderQuery' do
         end
 
         context 'nil in string enum' do
+          display = ->(issue) { "##{issue.id}-#{issue.priority || 'NULL'}" }
           priorities = [nil, 'low', 'medium', 'high']
-          let!(:issues) { priorities.map { |p| create_issue(priority: p) } }
-          priorities.permutation do |p|
-            it "works for #{p} (desc)" do
-              scope = Issue.seek([:priority, p]).scope
-              actual = scope.all.map(&:priority)
-              expected = p
-              expect(actual).to eq(expected), scope.to_sql
+          let!(:issues) do
+            priorities.flat_map do |p|
+              [create_issue(priority: p), create_issue(priority: p)]
             end
-            it "works for #{p} (asc)" do
-              scope = Issue.seek([:priority, p, :asc]).scope
-              actual = scope.all.map(&:priority)
-              expected = p.reverse
-              expect(actual).to eq(expected), scope.to_sql
+          end
+          priorities.permutation do |perm|
+            it "works for #{perm} (desc)" do
+              expect_order(
+                Issue.seek([:priority, perm]),
+                issues.sort_by { |x| [perm.index(x.priority), x.id] },
+                &display
+              )
+            end
+            it "works for #{perm} (asc)" do
+              expect_order(
+                Issue.seek([:priority, perm, :asc]),
+                issues.sort_by { |x| [perm.index(x.priority), -x.id] }.reverse,
+                &display
+              )
             end
           end
         end
@@ -340,69 +347,33 @@ RSpec.describe 'OrderQuery' do
         end
 
         context 'nil in boolean enum' do
+          display = ->(post) { "##{post.id}-#{post.pinned || 'NULL'}" }
           states = [nil, false, true]
-          let!(:posts) { states.map { |state| create_post(pinned: state) } }
-          states.permutation do |p|
-            it "works for #{p} (desc)" do
-              scope = Post.seek([:pinned, p]).scope
-              actual = scope.all.map(&:pinned)
-              expected = p
-              expect(actual).to eq(expected), scope.to_sql
+          let!(:posts) do
+            states.flat_map do |state|
+              [create_post(pinned: state), create_post(pinned: state)]
             end
-            it "works for #{p} (asc)" do
-              scope = Post.seek([:pinned, p, :asc]).scope
-              actual = scope.all.map(&:pinned)
-              expected = p.reverse
-              expect(actual).to eq(expected), scope.to_sql
+          end
+          states.permutation do |perm|
+            it "works for #{perm} (desc)" do
+              expect_order(
+                Post.seek([:pinned, perm]),
+                posts.sort_by { |x| [perm.index(x.pinned), x.id] },
+                &display
+              )
+            end
+            it "works for #{perm} (asc)" do
+              expect_order(
+                Post.seek([:pinned, perm, :asc]),
+                posts.sort_by { |x| [perm.index(x.pinned), -x.id] }.reverse,
+                &display
+              )
             end
           end
         end
 
         context 'nil published_at' do
-          # rubocop:disable Metrics/AbcSize
-
-          def expect_next(space, post, next_post)
-            point = space.at(post)
-            actual = point.next
-            failure_message =
-              "expected: #{post.title}.next == #{next_post.title}\n" \
-              "     got: #{actual ? actual.title : 'nil'}\n" \
-              "     all: #{space.scope.all.map(&:title)}\n" \
-              "     sql: #{space.at(post).after.limit(1).to_sql}"
-            expect(actual ? actual.title : nil).to eq(next_post.title),
-                                                   failure_message
-          end
-
-          def expect_prev(space, post, prev_post)
-            point = space.at(post)
-            actual = point.previous
-            failure_message =
-              "expected: #{post.title}.previous == #{prev_post.title}\n" \
-              "     got: #{actual ? actual.title : 'nil'}\n" \
-              "     all: #{space.scope.all.map(&:title)}\n" \
-              "     sql: #{space.at(post).before.limit(1).to_sql}"
-            expect(actual ? actual.title : nil).to eq(prev_post.title),
-                                                   failure_message
-          end
-
-          def expect_order(space, ordered)
-            actual = space.scope.all.map(&:title)
-            expected = ordered.map(&:title)
-            failure_message =
-              "expected: #{expected * ', '}\n"\
-              "     got: #{actual * ', '}\n"\
-              "     sql: #{space.scope.to_sql}"
-            expect(actual).to eq(expected), failure_message
-
-            ordered.each_cons(2) do |post, next_post|
-              expect_next space, post, next_post
-              expect_prev space, next_post, post
-            end
-            expect_next space, ordered.last, ordered.first
-            expect_prev space, ordered.first, ordered.last
-          end
-
-          # rubocop:enable Metrics/AbcSize
+          display = ->(post) { post.title }
 
           let! :null_1 do
             Post.create!(title: 'null_1', published_at: nil).reload
@@ -419,22 +390,22 @@ RSpec.describe 'OrderQuery' do
 
           it 'orders nulls first (desc)' do
             space = Post.seek([:published_at, :desc, nulls: :first])
-            expect_order space, [null_1, null_2, older, newer]
+            expect_order space, [null_1, null_2, older, newer], &display
           end
 
           it 'orders nulls first (asc)' do
             space = Post.seek([:published_at, :asc, nulls: :first])
-            expect_order space, [null_1, null_2, newer, older]
+            expect_order space, [null_1, null_2, newer, older], &display
           end
 
           it 'orders nulls last (desc)' do
             space = Post.seek([:published_at, :desc, nulls: :last])
-            expect_order space, [older, newer, null_1, null_2]
+            expect_order space, [older, newer, null_1, null_2], &display
           end
 
           it 'orders nulls last (asc)' do
             space = Post.seek([:published_at, :asc, nulls: :last])
-            expect_order space, [newer, older, null_1, null_2]
+            expect_order space, [newer, older, null_1, null_2], &display
           end
         end
 

@@ -8,7 +8,7 @@ if ENV['COVERAGE'] && !%w[rbx jruby].include?(RUBY_ENGINE)
 end
 require 'order_query'
 
-Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }
+require_relative './support/order_expectation'
 
 require 'fileutils'
 FileUtils.mkpath 'log' unless File.directory? 'log'
@@ -34,4 +34,8 @@ when 'sqlite3'
 else
   fail "Unknown DB adapter #{adapter}. "\
        'Valid adapters are: mysql2, postgresql, sqlite3.'
+end
+
+RSpec.configure do |config|
+  config.include OrderExpectations
 end

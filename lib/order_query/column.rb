@@ -38,7 +38,7 @@ module OrderQuery
              "extra arguments: #{vals_and_or_dir.map(&:inspect) * ', '}"
       end
       @unique = unique.nil? ? (name.to_s == scope.primary_key) : unique
-      if @order_enum && (@order_enum[0].nil? || @order_enum[-1].nil?)
+      if @order_enum && @order_enum.include?(nil)
         fail ArgumentError, '`nulls` cannot be set if a value is null' if nulls
         @nullable = true
         @nulls = if @order_enum[0].nil?
