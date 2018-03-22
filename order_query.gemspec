@@ -21,6 +21,8 @@ Gem::Specification.new do |s|
     s.metadata = { 'issue_tracker' => 'https://github.com/glebm/order_query' }
   end
 
+  s.required_ruby_version = '>= 2.3.0'
+
   s.add_dependency 'activerecord', '>= 5.0', '< 6.0'
   s.add_dependency 'activesupport', '>= 5.0', '< 6.0'
   s.add_development_dependency 'rake', '~> 10.2'
