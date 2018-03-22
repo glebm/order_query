@@ -36,6 +36,6 @@ else
        'Valid adapters are: mysql2, postgresql, sqlite3.'
 end
 
-RSpec.configure do |config|
-  config.include OrderExpectations
+RSpec.configure do |c|
+  c.include OrderExpectations
 end
