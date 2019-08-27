@@ -2,4 +2,4 @@
 
 source 'https://rubygems.org'
 
-eval_gemfile 'spec/gemfiles/rails_5_2.gemfile'
+eval_gemfile 'spec/gemfiles/rails_6_0.gemfile'
