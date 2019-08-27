@@ -51,6 +51,7 @@ module OrderQuery
         if optimize_enum_bools_nil?(col)
           return optimize_enum_bools_nil(col, reverse)
         end
+
         clauses = []
         with_nulls = false
         if col.order_enum.include?(nil)
@@ -69,6 +70,7 @@ module OrderQuery
       def needs_null_sort?(col, reverse,
                            nulls_direction = col.nulls_direction(reverse))
         return false unless col.nullable?
+
         nulls_direction != col.default_nulls_direction(reverse)
       end
 

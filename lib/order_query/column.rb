@@ -40,6 +40,7 @@ module OrderQuery
       @unique = unique.nil? ? (name.to_s == scope.primary_key) : unique
       if @order_enum&.include?(nil)
         fail ArgumentError, '`nulls` cannot be set if a value is null' if nulls
+
         @nullable = true
         @nulls = if @order_enum[0].nil?
                    @direction == :desc ? :first : :last
@@ -87,7 +88,7 @@ module OrderQuery
     # @example for [:difficulty, ['Easy', 'Normal', 'Hard']]:
     #  enum_side('Normal', :after) #=> ['Hard']
     #  enum_side('Normal', :after, false) #=> ['Normal', 'Hard']
-    def enum_side(value, side, strict = true)
+    def enum_side(value, side, strict = true) # rubocop:disable Metrics/AbcSize
       ord = order_enum
       pos = ord.index(value)
       if pos

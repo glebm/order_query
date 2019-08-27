@@ -22,6 +22,7 @@ module OrderQuery
         if @columns.detect(&:unique?)
           fail ArgumentError, 'Unique column must be last'
         end
+
         @columns << Column.new(base_scope, base_scope.primary_key)
       end
       @order_by_sql = SQL::OrderBy.new(@columns)
