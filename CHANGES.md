@@ -1,5 +1,6 @@
-## 0.4.2 (not released yet)
+## 0.5.0
 
+* Rails 6 now supported.
 * Fixes support for `nil`s with explicit order, when a `nil` is neither
   the first nor the last element of the explicit order,
   e.g. `status: ['assigned', nil, 'fixed']`.
