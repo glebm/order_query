@@ -1,50 +1,70 @@
-sudo: false
-dist: trusty
 language: ruby
+dist: xenial
+sudo: false
 cache: bundler
 bundler_args: --path ../../vendor/bundle --without debug
-rvm:
-- 2.3
-- jruby
-gemfile:
-- spec/gemfiles/rails_5_0.gemfile
-- spec/gemfiles/rails_5_1.gemfile
-- spec/gemfiles/rails_5_2.gemfile
+
 matrix:
-  allow_failures:
-  # One test fails on JRuby + sqlite3, reason unknown.
-  - rvm: jruby
-    env: DB=sqlite3
-  # Needs activerecord-jdbcpostgresql-adapter v51.0+ release
-  # https://github.com/jruby/activerecord-jdbc-adapter/issues/780
-  - rvm: jruby
-    gemfile: spec/gemfiles/rails_5_2.gemfile
-    env: DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
-  - rvm: jruby
-    gemfile: spec/gemfiles/rails_5_1.gemfile
-    env: DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
+  include:
+    - name: Rubocop
+      gemfile: spec/gemfiles/rubocop.gemfile
+      rvm: 2.5.3
+      script: bundle exec rubocop
+      before_script:
+      after_script:
+    - gemfile: spec/gemfiles/rails_5_0.gemfile
+      rvm: 2.3.8
+      env: DB=sqlite3
+    - gemfile: spec/gemfiles/rails_5_0.gemfile
+      rvm: 2.3.8
+      env: DB=mysql2 DB_USERNAME=root DB_PASSWORD=""
+      services: mysql
+    - gemfile: spec/gemfiles/rails_5_0.gemfile
+      rvm: 2.3.8
+      env: DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
+      services: postgresql
+    - gemfile: spec/gemfiles/rails_5_1.gemfile
+      rvm: 2.3.8
+      env: DB=sqlite3
+    - gemfile: spec/gemfiles/rails_5_1.gemfile
+      rvm: 2.3.8
+      env: DB=mysql2 DB_USERNAME=root DB_PASSWORD=""
+      services: mysql
+    - gemfile: spec/gemfiles/rails_5_1.gemfile
+      rvm: 2.3.8
+      env: DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
+      services: postgresql
+    - gemfile: spec/gemfiles/rails_5_2.gemfile
+      rvm: 2.3.8
+      env: DB=sqlite3
+    - gemfile: spec/gemfiles/rails_5_2.gemfile
+      rvm: 2.3.8
+      env: DB=mysql2 DB_USERNAME=root DB_PASSWORD=""
+      services: mysql
+    - gemfile: spec/gemfiles/rails_5_2.gemfile
+      rvm: 2.3.8
+      env: DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
+      services: postgresql
+    - gemfile: spec/gemfiles/rails_6_0.gemfile
+      rvm: 2.5.3
+      env: DB=sqlite3
+    - gemfile: spec/gemfiles/rails_6_0.gemfile
+      rvm: 2.5.3
+      env: DB=mysql2 DB_USERNAME=root DB_PASSWORD=""
+      services: mysql
+    - gemfile: spec/gemfiles/rails_6_0.gemfile
+      rvm: 2.5.3
+      env: DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
+      services: postgresql
 env:
-  matrix:
-  # Username and password from http://docs.travis-ci.com/user/database-setup/
-  - DB=sqlite3
-  - DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
-  - DB=mysql2 DB_USERNAME=root DB_PASSWORD=""
   global:
   - TRAVIS=1
+  - COVERAGE=1
 before_script:
 - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
 - chmod +x ./cc-test-reporter
 - ./cc-test-reporter before-build
-script:
-- >
-  if [[ "$(rvm current)" = "ruby-"* ]]; then
-    export COVERAGE=1
-  fi
-- bundle exec rspec --force-color --format d
-- >
-  if [[ "$(rvm current)" = "ruby-"* ]]; then
-    bundle exec rubocop
-  fi
+script: bundle exec rspec --force-color --format d
 after_script:
 - >
   if [ ! -z "$COVERAGE" ]; then
