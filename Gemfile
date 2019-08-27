@@ -3,3 +3,4 @@
 source 'https://rubygems.org'
 
 eval_gemfile 'spec/gemfiles/rails_6_0.gemfile'
+eval_gemfile 'rubocop.gemfile'
