@@ -32,12 +32,21 @@ module OrderQuery
     # @return [:first, :last] the default nulls order, based on the given
     #   scope's connection adapter name.
     def default(scope, dir)
-      case scope.connection_config[:adapter]
+      case connection_adapter(scope)
       when /mysql|maria|sqlite|sqlserver/i
         (dir == :asc ? :first : :last)
       else
         # Oracle, Postgres
         (dir == :asc ? :last : :first)
+      end
+    end
+
+    def connection_adapter(scope)
+      if scope.respond_to?(:connection_db_config)
+        # Rails >= 6.1.0
+        scope.connection_db_config.adapter
+      else
+        scope.connection_config[:adapter]
       end
     end
   end
