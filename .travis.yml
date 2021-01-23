@@ -56,6 +56,17 @@ matrix:
       rvm: 2.5.3
       env: DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
       services: postgresql
+    - gemfile: spec/gemfiles/rails_6_1.gemfile
+      rvm: 2.5.3
+      env: DB=sqlite3
+    - gemfile: spec/gemfiles/rails_6_1.gemfile
+      rvm: 2.5.3
+      env: DB=mysql2 DB_USERNAME=root DB_PASSWORD=""
+      services: mysql
+    - gemfile: spec/gemfiles/rails_6_1.gemfile
+      rvm: 2.5.3
+      env: DB=postgresql DB_USERNAME=postgres DB_PASSWORD=""
+      services: postgresql
 env:
   global:
   - TRAVIS=1
