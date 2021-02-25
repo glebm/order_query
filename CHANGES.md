@@ -1,3 +1,6 @@
+## 0.5.1
+
+* Rails 6.1 now supported.
 ## 0.5.0
 
 * Rails 6 now supported.
