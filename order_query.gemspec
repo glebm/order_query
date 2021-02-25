@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'activerecord', '>= 5.0', '< 7.0'
   s.add_dependency 'activesupport', '>= 5.0', '< 7.0'
-  s.add_development_dependency 'rake', '~> 10.2'
+  s.add_development_dependency 'rake', '~> 13.0'
   s.add_development_dependency 'rspec', '~> 3.4'
   s.add_development_dependency 'simplecov'
 end
