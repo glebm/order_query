@@ -1,3 +1,7 @@
+## 0.5.2
+
+* Ruby 3.0 now supported.
+
 ## 0.5.1
 
 * Rails 6.1 now supported.
@@ -23,7 +27,7 @@
 
 ## 0.3.4
 
-* The `before` and `after` methods now accept a boolean argument that indicates 
+* The `before` and `after` methods now accept a boolean argument that indicates
   whether the relation should exclude the given point or not.
   By default the given point is excluded, if you want to include it,
   use `before(false)` / `after(false)`.

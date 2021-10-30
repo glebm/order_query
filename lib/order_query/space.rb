@@ -15,7 +15,7 @@ module OrderQuery
     def initialize(base_scope, order_spec)
       @base_scope = base_scope
       @columns = order_spec.map do |cond_spec|
-        Column.new(base_scope, *cond_spec)
+        build_column(base_scope, cond_spec)
       end
       # add primary key if columns are not unique
       unless @columns.last.unique?
@@ -57,6 +57,14 @@ module OrderQuery
     def inspect
       "#<OrderQuery::Space @columns=#{@columns.inspect} "\
       "@base_scope=#{@base_scope.inspect}>"
+    end
+
+    private
+
+    def build_column(base_scope, cond_spec)
+      column_spec = cond_spec.last.is_a?(Hash) ? cond_spec : cond_spec.push({})
+      attr_name, *vals_and_or_dir, options = column_spec
+      Column.new(base_scope, attr_name, *vals_and_or_dir, **options)
     end
   end
 end
