@@ -169,6 +169,12 @@ RSpec.describe 'OrderQuery' do
           )
         end
 
+        it '.seek does not mutate the given order arguments' do
+          order = [[:priority, :desc], [:id, :asc]]
+          Issue.seek(order)
+          expect(order).to eq [[:priority, :desc], [:id, :asc]]
+        end
+
         context 'partitioned on a boolean flag' do
           before do
             create_issue(active: true)
