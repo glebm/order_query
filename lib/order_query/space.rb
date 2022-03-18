@@ -14,7 +14,8 @@ module OrderQuery
     # @see Column#initialize for the order_spec element format.
     def initialize(base_scope, order_spec)
       @base_scope = base_scope
-      @columns = order_spec.map do |cond_spec|
+      @columns = order_spec.map(&:clone)
+      @columns.map! do |cond_spec|
         build_column(base_scope, cond_spec)
       end
       # add primary key if columns are not unique
