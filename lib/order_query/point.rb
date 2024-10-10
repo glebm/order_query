@@ -68,14 +68,14 @@ module OrderQuery
       v = record.send(column.name)
       if v.nil? && !column.nullable?
         fail Errors::NonNullableColumnIsNullError,
-             "Column #{column.inspect} is NULL on record #{@record.inspect}. "\
+             "Column #{column.inspect} is NULL on record #{@record.full_inspect}. "\
              'Set the `nulls` option to :first or :last.'
       end
       v
     end
 
     def inspect
-      "#<OrderQuery::Point @record=#{@record.inspect} @space=#{@space.inspect}>"
+      "#<OrderQuery::Point @record=#{@record.full_inspect} @space=#{@space.inspect}>"
     end
 
     protected
