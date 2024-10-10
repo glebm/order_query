@@ -1,3 +1,7 @@
+## 0.5.4
+
+* Rails 7.2 now supported
+
 ## 0.5.3
 
 * Rails 7.1 now supported.
