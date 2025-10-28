@@ -1,3 +1,7 @@
+## 0.5.6
+
+* Rails 8.1 now supported
+
 ## 0.5.5
 
 * Rails 8.0 now supported
