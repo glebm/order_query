@@ -7,6 +7,7 @@ if ENV['COVERAGE'] && !%w[rbx jruby].include?(RUBY_ENGINE)
   SimpleCov.command_name 'RSpec'
 end
 require 'order_query'
+require 'ostruct'
 
 require_relative './support/order_expectation'
 
